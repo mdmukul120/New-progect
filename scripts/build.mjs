@@ -85,97 +85,148 @@ async function checkCorsNeed(testUrl) {
 
 function extractBalancedBraceEnd(code, openBraceIdx) {
   let depth = 0;
-  let inSingle = false;
-  let inDouble = false;
-  let inTemplate = false;
-  let inLineComment = false;
-  let inBlockComment = false;
-  let prev = '';
+  let state = 'code'; // 'code' | 'single' | 'double' | 'template' | 'regex' | 'regex_class' | 'line_comment' | 'block_comment'
+  const templateBraceStack = [];
+  let prevNonSpace = '{';
 
   for (let i = openBraceIdx; i < code.length; i++) {
     const ch = code[i];
     const next = code[i + 1] || '';
 
-    if (inLineComment) {
-      if (ch === '\n') inLineComment = false;
-      prev = ch;
+    if (state === 'line_comment') {
+      if (ch === '\n') state = 'code';
       continue;
     }
-    if (inBlockComment) {
-      if (prev === '*' && ch === '/') inBlockComment = false;
-      prev = ch;
+    if (state === 'block_comment') {
+      if (ch === '*' && next === '/') {
+        state = 'code';
+        i++;
+      }
       continue;
     }
-    if (inSingle) {
+    if (state === 'single') {
       if (ch === '\\') {
         i++;
-        prev = '';
         continue;
       }
-      if (ch === "'") inSingle = false;
-      prev = ch;
+      if (ch === "'") {
+        state = 'code';
+        prevNonSpace = "'";
+      }
       continue;
     }
-    if (inDouble) {
+    if (state === 'double') {
       if (ch === '\\') {
         i++;
-        prev = '';
         continue;
       }
-      if (ch === '"') inDouble = false;
-      prev = ch;
+      if (ch === '"') {
+        state = 'code';
+        prevNonSpace = '"';
+      }
       continue;
     }
-    if (inTemplate) {
+    if (state === 'regex') {
       if (ch === '\\') {
         i++;
-        prev = '';
+        continue;
+      }
+      if (ch === '[') {
+        state = 'regex_class';
+        continue;
+      }
+      if (ch === '/') {
+        state = 'code';
+        prevNonSpace = '/';
+      }
+      continue;
+    }
+    if (state === 'regex_class') {
+      if (ch === '\\') {
+        i++;
+        continue;
+      }
+      if (ch === ']') {
+        state = 'regex';
+      }
+      continue;
+    }
+    if (state === 'template') {
+      if (ch === '\\') {
+        i++;
         continue;
       }
       if (ch === '`') {
-        inTemplate = false;
+        state = 'code';
+        prevNonSpace = '`';
+        continue;
       }
-      prev = ch;
+      if (ch === '$' && next === '{') {
+        templateBraceStack.push(depth);
+        depth++;
+        state = 'code';
+        prevNonSpace = '{';
+        i++;
+        continue;
+      }
       continue;
     }
 
+    // state === 'code'
     if (ch === '/' && next === '/') {
-      inLineComment = true;
+      state = 'line_comment';
       i++;
-      prev = '';
       continue;
     }
     if (ch === '/' && next === '*') {
-      inBlockComment = true;
+      state = 'block_comment';
       i++;
-      prev = '';
       continue;
     }
     if (ch === "'") {
-      inSingle = true;
-      prev = ch;
+      state = 'single';
       continue;
     }
     if (ch === '"') {
-      inDouble = true;
-      prev = ch;
+      state = 'double';
       continue;
     }
     if (ch === '`') {
-      inTemplate = true;
-      prev = ch;
+      state = 'template';
+      continue;
+    }
+    if (
+      ch === '/' &&
+      next !== '/' &&
+      next !== '*' &&
+      '=(,[!:?&|;{}~+-*%^<>'.includes(prevNonSpace)
+    ) {
+      state = 'regex';
       continue;
     }
 
     if (ch === '{') {
       depth++;
-    } else if (ch === '}') {
+      prevNonSpace = '{';
+      continue;
+    }
+    if (ch === '}') {
       depth--;
+      if (templateBraceStack.length > 0 && depth === templateBraceStack[templateBraceStack.length - 1]) {
+        templateBraceStack.pop();
+        state = 'template';
+        continue;
+      }
       if (depth === 0) {
         return i;
       }
+      prevNonSpace = '}';
+      continue;
     }
-    prev = ch;
+
+    if (ch > ' ') {
+      prevNonSpace = ch;
+    }
   }
   return -1;
 }
@@ -228,7 +279,7 @@ function patchEntryChunk(rawCode) {
 
   ({ code } = replaceFunctionBodyBySignature(
     code,
-    /function\s+([A-Za-z0-9_$]+)\(\)\{const [A-Za-z0-9_$]+=Date\.now\(\);try\{window\.localStorage\.setItem\([^)]+\)\}catch\{\}return [^,]+,window\.open\([^)]+\)/,
+    /function\s+([A-Za-z0-9_$]+)\(\)\{const [A-Za-z0-9_$]+=Date\.now\(\);try\{window\.localStorage\.setItem\([^)]+\)\}catch\{\}return [A-Za-z0-9_$]+\(\),window\.open\(/,
     (m) => `function ${m[1]}(){return null}`,
     'Popup ad opener pA() -> null'
   ));
@@ -300,7 +351,7 @@ function patchEntryChunk(rawCode) {
   // 7. Remove Anti-DevTools debugger loop H3(), fetch lock AN(), and right-click/F12 blocker a5()
   ({ code } = replaceFunctionBodyBySignature(
     code,
-    /function\s+([A-Za-z0-9_$]+)\(\)\{const\[[A-Za-z0-9_$,]+\]=[A-Za-z0-9_$]+\.useState\(!1\);return [A-Za-z0-9_$]+\.useEffect\(\(\)=>\{[^}]*debugger;/,
+    /function\s+([A-Za-z0-9_$]+)\(\)\{const\[[A-Za-z0-9_$,]+\]=[A-Za-z0-9_$]+\.useState\(!1\);return [A-Za-z0-9_$]+\.useEffect\(\(\)=>\{[\s\S]{0,450}?debugger;/,
     (m) => `function ${m[1]}(){return null}`,
     'Anti-DevTools 400ms debugger loop & modal H3() -> null'
   ));
@@ -354,42 +405,77 @@ function patchEntryChunk(rawCode) {
     'about:blank'
   );
 
-  // 11. Patch TanStack Start SSR hydration into universal error-free SPA createRoot mount!
-  // Let's inspect how hydrateRoot & Z2 are called at the bottom of index-*.js.
-  // Typical TanStack Start client entry:
-  //   hydrateStart().then(router => hydrateRoot(document, ...)) or Z2(router)...hydrateRoot(document, ...)
-  // If window.$_TSR is absent, Z2(t) would access a.router on undefined unless guarded.
-  // Let's make Z2(t) seamlessly support pure SPA client boot when !window.$_TSR:
+  // 11. Universal SPA client mount on #app (zero SSR hydration mismatch on ANY route!)
+  // Replace kN({children:t}) shellComponent (which previously rendered <html><head><body>) with a Fragment
+  // rendering HeadContent (sk) + children inside <div id="app"></div> (React 19 hoists <title>/<meta>/<link> to <head>!)
+  const headContentMatch = code.match(/function\s+[A-Za-z0-9_$]+\(\{children:[A-Za-z0-9_$]+\}\)\{return\s+[A-Za-z0-9_$]+\.jsxs\("html",\{[^}]*children:\[[A-Za-z0-9_$]+\.jsxs\("head",\{children:\[[A-Za-z0-9_$]+\.jsx\(([A-Za-z0-9_$]+),\{\}\)/);
+  const headCompIdent = headContentMatch ? headContentMatch[1] : null;
+
+  ({ code } = replaceFunctionBodyBySignature(
+    code,
+    /function\s+([A-Za-z0-9_$]+)\(\{children:([A-Za-z0-9_$]+)\}\)\{return\s+[A-Za-z0-9_$]+\.jsxs\("html",\{lang:"en",className:"dark",/,
+    (m) => {
+      if (headCompIdent) {
+        return `function ${m[1]}({children:${m[2]}}){return ${jsxIdent}.jsxs(${jsxIdent}.Fragment,{children:[${jsxIdent}.jsx(${headCompIdent},{}),${m[2]}]})} `;
+      }
+      return `function ${m[1]}({children:${m[2]}}){return ${m[2]}}`;
+    },
+    'Root shellComponent kN() -> SPA Fragment with React 19 HeadContent'
+  ));
+
+  // Make Z2(router) seamlessly support pure SPA client boot when !window.$_TSR:
   ({ code } = replaceFunctionBodyBySignature(
     code,
     /async function\s+([A-Za-z0-9_$]+)\(([A-Za-z0-9_$]+)\)\{const ([A-Za-z0-9_$]+)=window\.\$_TSR,/,
     (m, orig) => {
       const fnName = m[1];
       const routerVar = m[2];
-      // When window.$_TSR is not present, run pure client-side router load and fire splash hide!
-      const guard = `if(!window.$_TSR){await ${routerVar}.load();setTimeout(()=>{try{window.dispatchEvent(new Event("hamyra-hide-splash"))}catch{}},30);return ${routerVar}}`;
+      const guard = `if(!window.$_TSR){await ${routerVar}.load();const _sp=document.getElementById("hamyra-splash");if(_sp){_sp.style.opacity="0";_sp.style.pointerEvents="none";setTimeout(()=>{_sp.style.display="none"},220)}return ${routerVar}}`;
       const bracePos = orig.indexOf('{');
       return `async function ${fnName}(${routerVar}){${guard}${orig.slice(bracePos + 1)}`;
     },
     'Universal SPA boot guard in Z2(router) when !window.$_TSR'
   ));
 
-  // Also switch hydrateRoot(document, ...) -> createRoot(document).render(...) when !window.$_TSR
-  // Let's check for hydrateRoot usage in entry chunk:
-  const hydrateRegex = /([A-Za-z0-9_$]+)\.hydrateRoot\(\s*document\s*,/g;
-  if (hydrateRegex.test(code)) {
-    code = code.replace(
-      /([A-Za-z0-9_$]+)\.hydrateRoot\(\s*document\s*,\s*([^)]+(?:\([^)]*\)[^)]*)*)\)/g,
-      (full, reactDomObj, elementExpr) => {
-        console.log(`  [patched] Replaced ${reactDomObj}.hydrateRoot(document, ...) with universal createRoot/hydrateRoot switch`);
-        return `(window.$_TSR?${reactDomObj}.hydrateRoot(document,${elementExpr}):(${reactDomObj}.createRoot(document).render(${elementExpr}),null))`;
+  // Switch hydrateRoot(document, ...) -> createRoot(document.getElementById("app") || document.body).render(...)
+  const hydrateCallMatch = /([A-Za-z0-9_$]+)\.hydrateRoot\(\s*document\s*,/.exec(code);
+  if (hydrateCallMatch) {
+    const callStart = hydrateCallMatch.index;
+    const reactDomObj = hydrateCallMatch[1];
+    const openParenIdx = code.indexOf('(', callStart);
+    // Find balanced closing parenthesis of hydrateRoot(...)
+    let pDepth = 0;
+    let pEnd = -1;
+    let inStr = '';
+    for (let i = openParenIdx; i < code.length; i++) {
+      const ch = code[i];
+      if (inStr) {
+        if (ch === '\\') {
+          i++;
+          continue;
+        }
+        if (ch === inStr) inStr = '';
+        continue;
       }
-    );
-  } else {
-    // Also check direct imported hydrateRoot(...)
-    const directHydrateRegex = /\bhydrateRoot\(\s*document\s*,/;
-    if (directHydrateRegex.test(code)) {
-      console.log('  [info] Found direct hydrateRoot(document, ...) call');
+      if (ch === '"' || ch === "'" || ch === '`') {
+        inStr = ch;
+        continue;
+      }
+      if (ch === '(') pDepth++;
+      else if (ch === ')') {
+        pDepth--;
+        if (pDepth === 0) {
+          pEnd = i;
+          break;
+        }
+      }
+    }
+    if (pEnd !== -1) {
+      const commaIdx = code.indexOf(',', openParenIdx);
+      const elementExpr = code.slice(commaIdx + 1, pEnd).trim();
+      const replacement = `${reactDomObj}.createRoot(document.getElementById("app")||document.body).render(${elementExpr})`;
+      code = code.slice(0, callStart) + replacement + code.slice(pEnd + 1);
+      console.log(`  [patched] Switched ${reactDomObj}.hydrateRoot(document, ...) -> createRoot(#app).render(...)`);
     }
   }
 
@@ -625,6 +711,20 @@ ${preloadTags}
     <img src="/hamyra-logo.jpg" alt="Hamyra" />
     <div class="brand">Hamyra</div>
   </div>
+  <div id="app"></div>
+  <script>
+    (function () {
+      var kill = function () {
+        var s = document.getElementById('hamyra-splash');
+        if (!s) return;
+        s.style.opacity = '0';
+        s.style.pointerEvents = 'none';
+        setTimeout(function () { if (s) s.style.display = 'none'; }, 240);
+      };
+      window.addEventListener('hamyra-hide-splash', kill, { once: true });
+      setTimeout(kill, 650);
+    })();
+  </script>
   <script type="module" src="/assets/${entryJs}"></script>
 </body>
 </html>
@@ -718,10 +818,23 @@ async function main() {
         text = patched.code;
       }
 
-      // If upstream APIs enforce Origin/CORS, transparently route HTTP fetches through our fast Edge proxy
-      // (Note: keep wss://edge.hamyra.xyz intact for Watch Party WebSockets!)
+      // For CORS-restricted edge.hamyra.xyz JSON endpoints, route through our fast serverless proxy,
+      // EXCEPT direct media/binary/HLS endpoints (/bongo/hls, /bongo/live, /tmdb/hls, /tmdb/seg, /mlbd/stream, /download/apk)
+      // which stream directly into <video>/<a>/hls.js at full CDN speed without serverless buffering!
       if (needEdgeProxy) {
-        text = text.replace(/https:\/\/edge\.hamyra\.xyz/g, '/api/edge');
+        text = text.replace(
+          /https:\/\/edge\.hamyra\.xyz/g,
+          '/api/edge'
+        );
+        // Restore direct edge.hamyra.xyz origin on high-bandwidth binary/HLS media endpoints
+        text = text.replace(
+          /`\$\{([A-Za-z0-9_$]+)\}\/(bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)/g,
+          '`https://edge.hamyra.xyz/$2'
+        );
+        text = text.replace(
+          /\/api\/edge\/(bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)/g,
+          'https://edge.hamyra.xyz/$1'
+        );
       }
       if (needApiHamyraProxy) {
         text = text.replace(/https:\/\/api\.hamyra\.xyz/g, '/api/apihamyra');
