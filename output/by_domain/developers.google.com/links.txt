@@ -1,0 +1,2 @@
+https://developers.google.com/protocol-buffers/
+https://developers.google.com/time/smear
