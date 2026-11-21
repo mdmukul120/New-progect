@@ -1,0 +1,84 @@
+kind,severity,item,reason,source_or_hash
+FILE,MEDIUM,CRICFy_v7.4 (3)/AndroidManifest.xml,পারমিশন তালিকা যাচাই করুন (নীচে দেখুন),46fe9fb96eb0fc6652aa6c5fab5c6d636f3ac32d89787c313b290795b13534ac
+FILE,LOW,CRICFy_v7.4 (3)/META-INF/AL2.0,অপ্রচলিত extension — অরফ্যান/ভাঙা ফাইল হতে পারে,0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594
+FILE,LOW,CRICFy_v7.4 (3)/META-INF/LGPL2.1,অপ্রচলিত extension — অরফ্যান/ভাঙা ফাইল হতে পারে,eea173a556abac0370461e57e12aab266894ea6be3874c2be05fd87871f75449
+FILE,MEDIUM,CRICFy_v7.4 (3)/assets/ad-viewer/omid-session-client-v1.js,IAB Open Measurement (OMID/OM) জাভাস্ক্রিপ্ট — বিজ্ঞাপন ইম্প্রেশন যাচাই/ট্র্যাকিং,f15e5ce012c87bd32c15d71d2fd0b954b9b2fd9d5818d817b3820af3d93d5a35
+FILE,MEDIUM,CRICFy_v7.4 (3)/assets/ad-viewer/omsdk-v1.js,IAB Open Measurement (OMID/OM) জাভাস্ক্রিপ্ট — বিজ্ঞাপন ইম্প্রেশন যাচাই/ট্র্যাকিং,896cf905b2b562818da58e19e25b525083f18638f6b9b0d7c6aea411a9907585
+FILE,MEDIUM,CRICFy_v7.4 (3)/assets/adi-registration.properties,Ad Identification (ADI) রেজিস্ট্রেশন আইডি — বিজ্ঞাপন অ্যাট্রিবিউশন; ডিভাইস-স্তরের ট্র্যাকিং,5e5b6b753dc95b7f238728b52388f096e281c649b3783356049006019963db35
+FILE,HIGH,CRICFy_v7.4 (3)/classes.dex,অবাধা bytecode — মিনিফাই/অবফাসকেটেড অ্যাপ কোড; আচরণ যাচাই ছাড়া ভরসা করা যায় না,20e0960648e05a744b97c4a8891184a68f6d8bbe13faa6e0bc0943e51ed269f4
+FILE,HIGH,CRICFy_v7.4 (3)/classes2.dex,অবাধা bytecode — মিনিফাই/অবফাসকেটেড অ্যাপ কোড; আচরণ যাচাই ছাড়া ভরসা করা যায় না,a732221327318509c2e4dcf3137b677f40255704974cbcf710961d682a788cca
+FILE,MEDIUM,CRICFy_v7.4 (3)/dk/dk.json,"অজ্ঞাত বৃহৎ JSON ডিকশনারি (p=166 KB, dk=9.5 KB) — অবফাসকেটেড কনফিগ/ডেটা হতে পারে",a8773fbcc90f3cd3d2fcd6e0445ea08ca434b515b7a7c695fe90c6068b75ec40
+FILE,LOW,CRICFy_v7.4 (3)/lib/arm64-v8a/libandroidx.graphics.path.so,Native library — সোর্স ছাড়া আচরণ অজানা,41e9a793c43a0f4fddb19e33f346bace464f30f888ba7b9eaf96294ea115bfb6
+FILE,MEDIUM,CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so,বান্ডেল থার্ড-পার্টি নেটিভ SDK (ক্রোম/কাস্ট/Unity coherence) — সোর্স নেই,985b0b6f87f2eef1d50b73c2603bb88cf9dec2999844f42af0169c768a11e068
+FILE,LOW,CRICFy_v7.4 (3)/lib/arm64-v8a/libdatastore_shared_counter.so,Native library — সোর্স ছাড়া আচরণ অজানা,d3e48717c9aa147e0ab21063ba0e8e0211cabf8bf40b222640829519edbf58e1
+FILE,LOW,CRICFy_v7.4 (3)/lib/arm64-v8a/libdav1dJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",8dacd114c6d196a7012db31000d4dbe38bcb2c3a21dace391463c21eedec1675
+FILE,LOW,CRICFy_v7.4 (3)/lib/arm64-v8a/libffmpegJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",0539b74dc8c51280df1c03b66615b562c049cbcf18055407a347405a87cce258
+FILE,LOW,CRICFy_v7.4 (3)/lib/arm64-v8a/libjnidispatch.so,Native library — সোর্স ছাড়া আচরণ অজানা,fe9c603f2a7a5d19197b87f275d6e0afb975f997a57ff4f8ca801cb8c5e7b731
+FILE,HIGH,CRICFy_v7.4 (3)/lib/arm64-v8a/libnative-lib.so,"ডেভেলপারের নিজস্ব নেটিভ কোড (প্রতি ABI-তে ~0.6–1 MB) — স্ট্যাটিক বিশ্লেষণে দেখা যায় না, সোর্স ছাড়া যাচাই অসম্ভব",8f76554026de8c58c777f40ec75124feb7e71d5ef556224b4c76347cb72b7827
+FILE,MEDIUM,CRICFy_v7.4 (3)/lib/arm64-v8a/libunitycoherencenative.so,বান্ডেল থার্ড-পার্টি নেটিভ SDK (ক্রোম/কাস্ট/Unity coherence) — সোর্স নেই,2765149c31ef0753ceff4417459b16161cf14bfc925411cd0abcc39aafb5e010
+FILE,LOW,CRICFy_v7.4 (3)/lib/armeabi/libjnidispatch.so,Native library — সোর্স ছাড়া আচরণ অজানা,27efc9e8c7320544c8417a1ae4c77d5091702430e6edae9f5dab060430b62ff6
+FILE,LOW,CRICFy_v7.4 (3)/lib/armeabi-v7a/libandroidx.graphics.path.so,Native library — সোর্স ছাড়া আচরণ অজানা,41399eba6fc2a60f6f14642375c1824f3cf25eb8fec7397d753730a3ceda3e2b
+FILE,MEDIUM,CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so,বান্ডেল থার্ড-পার্টি নেটিভ SDK (ক্রোম/কাস্ট/Unity coherence) — সোর্স নেই,12e580104783c991a2ac729cdf188594e2e164abcbaa88cf6876fc156b625859
+FILE,LOW,CRICFy_v7.4 (3)/lib/armeabi-v7a/libdatastore_shared_counter.so,Native library — সোর্স ছাড়া আচরণ অজানা,716c5d8d2cac8ca0edf65da8f139c7886b726ac79d542a14edeb94994ba6d3dc
+FILE,LOW,CRICFy_v7.4 (3)/lib/armeabi-v7a/libdav1dJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",1f270ebd1ec34a2486f9101eb2440c166a0097e11e7d4a9239ac70aba1b27d21
+FILE,LOW,CRICFy_v7.4 (3)/lib/armeabi-v7a/libffmpegJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",66bd5bfce0ae34faab0e87882b1454bf00758604ad94b28b8c97419849f50497
+FILE,LOW,CRICFy_v7.4 (3)/lib/armeabi-v7a/libjnidispatch.so,Native library — সোর্স ছাড়া আচরণ অজানা,c5be6d55a8f0eaca7830348196a9d36203137f6334dc03aca1d58699b8eda045
+FILE,HIGH,CRICFy_v7.4 (3)/lib/armeabi-v7a/libnative-lib.so,"ডেভেলপারের নিজস্ব নেটিভ কোড (প্রতি ABI-তে ~0.6–1 MB) — স্ট্যাটিক বিশ্লেষণে দেখা যায় না, সোর্স ছাড়া যাচাই অসম্ভব",9a97a9930ec3ca071f80ace90de01a6de08ee41ce755b04fb43acade335e666e
+FILE,MEDIUM,CRICFy_v7.4 (3)/lib/armeabi-v7a/libunitycoherencenative.so,বান্ডেল থার্ড-পার্টি নেটিভ SDK (ক্রোম/কাস্ট/Unity coherence) — সোর্স নেই,d854bfd25fbbdb122412a45ad342fc590ab816de31bec6c8c205448ea85c1696
+FILE,LOW,CRICFy_v7.4 (3)/lib/mips/libjnidispatch.so,Native library — সোর্স ছাড়া আচরণ অজানা,c6f2d715fc6a91c4a364aba7e277f4302c726984c3d22860e4b80d80634d9e71
+FILE,LOW,CRICFy_v7.4 (3)/lib/mips64/libjnidispatch.so,Native library — সোর্স ছাড়া আচরণ অজানা,7a9fe9d0d017deb0195dca3d21ef06a7864b9ad66bcab2608e9ad468a511f697
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86/libandroidx.graphics.path.so,Native library — সোর্স ছাড়া আচরণ অজানা,eb0570b41fd3bff25d8204a967c03bd7550719e768b791f680cc40cbe35f29af
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86/libdatastore_shared_counter.so,Native library — সোর্স ছাড়া আচরণ অজানা,cd4a1649e2c8350703146f94a6ee2bf4c3c8c9f172159f805b61a4a2abdf0659
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86/libdav1dJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",d789820a07f0a3cdb3b83fd4e74f2dc710246cd8b587d98dbb170a9204ff10d6
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86/libffmpegJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",635d00c0d24d55358529ed9af97c5ab90dde44b59b86705d518febee981695f7
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86/libjnidispatch.so,Native library — সোর্স ছাড়া আচরণ অজানা,2051548fe8334e4703bdc7a88820ac7fa7e6ecbfe17ac3b5976a5f7667a8b84c
+FILE,HIGH,CRICFy_v7.4 (3)/lib/x86/libnative-lib.so,"ডেভেলপারের নিজস্ব নেটিভ কোড (প্রতি ABI-তে ~0.6–1 MB) — স্ট্যাটিক বিশ্লেষণে দেখা যায় না, সোর্স ছাড়া যাচাই অসম্ভব",0eec74b931264571267a39923f405744155de4a915c527cd99bf026f176ff931
+FILE,MEDIUM,CRICFy_v7.4 (3)/lib/x86/libunitycoherencenative.so,বান্ডেল থার্ড-পার্টি নেটিভ SDK (ক্রোম/কাস্ট/Unity coherence) — সোর্স নেই,c5b129241cf8c1f28a8787141750e479023b046ce74aed9a8200283ca6dc3dd6
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86_64/libandroidx.graphics.path.so,Native library — সোর্স ছাড়া আচরণ অজানা,4e56c996f13670e70082658de7880c4020eabf4f25e43387f88ed78a713fc9f0
+FILE,MEDIUM,CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so,বান্ডেল থার্ড-পার্টি নেটিভ SDK (ক্রোম/কাস্ট/Unity coherence) — সোর্স নেই,cef6151e1fb694e80b79bb82ffc95835a02e12525c20cfe9143be48aec1e5807
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86_64/libdatastore_shared_counter.so,Native library — সোর্স ছাড়া আচরণ অজানা,fb6c9208988c49ae94943bc3236fa763ba584722e044fa4ea9a12d2941027105
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86_64/libdav1dJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",103e7922e0e9dbfea1c56ae18e46d38d781600f1da5d04afbeb73aa3889a8d52
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86_64/libffmpegJNI.so,"মিডিয়া ডিকোডার native lib — সাধারণত নিরীহ, কিন্তু বান্ডেল করা বাইনারি যাচাই ছাড়া ভরসা নয়",eb10d06279ccb44679115353de3d62a4b70deba2afdb99ae2639a6562b347c45
+FILE,LOW,CRICFy_v7.4 (3)/lib/x86_64/libjnidispatch.so,Native library — সোর্স ছাড়া আচরণ অজানা,09e25588d4208d6d76b6676dfbdcf394be73af57836e815c4e4513ebfc0ef4a1
+FILE,HIGH,CRICFy_v7.4 (3)/lib/x86_64/libnative-lib.so,"ডেভেলপারের নিজস্ব নেটিভ কোড (প্রতি ABI-তে ~0.6–1 MB) — স্ট্যাটিক বিশ্লেষণে দেখা যায় না, সোর্স ছাড়া যাচাই অসম্ভব",09d545a9b1f4ef7be7eb1877977847986907042b4265e6934c4b5bacf3726200
+FILE,MEDIUM,CRICFy_v7.4 (3)/lib/x86_64/libunitycoherencenative.so,বান্ডেল থার্ড-পার্টি নেটিভ SDK (ক্রোম/কাস্ট/Unity coherence) — সোর্স নেই,d8b5afcda6b429cf6de2d7d9e7e40a7666d8bce4c90ab59711eb4088f1f766ce
+FILE,MEDIUM,CRICFy_v7.4 (3)/p/p.json,"অজ্ঞাত বৃহৎ JSON ডিকশনারি (p=166 KB, dk=9.5 KB) — অবফাসকেটেড কনফিগ/ডেটা হতে পারে",c3f6b88b0c570b9a13eee5bfa957f5398c26b4928000e00ee73a810ac8893d55
+FILE,LOW,CRICFy_v7.4 (3)/resources.arsc,কম্পাইল করা রিসোর্স টেবিল — কনটেন্ট যাচাই ছাড়া আইডেন্টিফাই করা যায় না,a1c3c0923fb649af9ccd0fcbda40ea04a6f9e8de48d5cb970afae8db5495e473
+APK_SIGNATURE,CRITICAL,CRICFy_v7.4.3.zip → META-INF/,"META-INF-এ APK স্বাক্ষর নেই (MANIFEST.MF / *.SF / *.RSA অনুপস্থিত) — অ্যাপটি স্বাক্ষরবিহীন বা স্বাক্ষর কেটে দেওয়া হয়েছে; Play-স্টোর বিল্ড নয়, ডেভেলপার কর্তৃক রিপ্যাক/মডিফাই করা সন্দেহ",b5a78589bc1d9cddb6542e2ee2e82b7daf8b408ffaac0db595e2b12f80ff2ed3
+PERMISSION,LOW,android.permission.FOREGROUND_SERVICE,ফোরগ্রাউন্ড সার্ভিস — স্ট্রিমিং অ্যাপের জন্য স্বাভাবিক,AndroidManifest.xml
+PERMISSION,LOW,android.permission.POST_NOTIFICATIONS,নোটিফিকেশন,AndroidManifest.xml
+PERMISSION,HIGH,android.permission.QUERY_ALL_PACKAGES,ইন্সটল করা সব অ্যাপ দেখা — বিজ্ঞাপন টার্গেটিং/প্রোফাইলিং,AndroidManifest.xml
+PERMISSION,MEDIUM,android.permission.RECEIVE_BOOT_COMPLETED,বুটে চালু — ব্যাকগ্রাউন্ড persistence,AndroidManifest.xml
+PERMISSION,CRITICAL,android.permission.REQUEST_INSTALL_PACKAGES,নতুন/আপডেটেড APK ইনস্টল করার অনুমতি — পার্শ্ব-লোড + অটো-আপডেট ম্যালওয়্যারের পথ,AndroidManifest.xml
+PERMISSION,HIGH,android.permission.SYSTEM_ALERT_WINDOW,অন্যান্য অ্যাপের ওপর ওভারলে — ফিশিং/ক্লিক-জালিয়াতি সম্ভব,AndroidManifest.xml
+PERMISSION,LOW,android.permission.WAKE_LOCK,স্ক্রিন জাগিয়ে রাখা — ভিডিওর জন্য স্বাভাবিক,AndroidManifest.xml
+LINK,MEDIUM,https://app-measurement.com/a,Google Analytics/Firebase App Measurement — বিশ্লেষণ ট্র্যাকিং,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://app-measurement.com/s/d,Google Analytics/Firebase App Measurement — বিশ্লেষণ ট্র্যাকিং,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://cashraven.io/legal/eula,CashRaven consent/monetization SDK — consent_config/auth_state স্ট্রিংসহ কোড; ইউজারের সম্মতি ডেটা সংগ্রহ ও বিজ্ঞাপন লোড করতে পারে,CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so
+INVALID_LINK,CRITICAL,https://cashraven.io/legal/eulacreatecr_androidcreate_brandedcreate_headlesscreate_with_brandingversionapp_idapply_consent_configauth_stateauth_statusautostart_enabledautostart_supportedbattery,বাইনারি string-pool সাইড-বা-সাইড concat — 'eula' এর সাথে SDK মেথড নাম লেগে গেছে,CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so
+LINK,MEDIUM,https://cashraven.io/legal/privacy,CashRaven consent/monetization SDK — consent_config/auth_state স্ট্রিংসহ কোড; ইউজারের সম্মতি ডেটা সংগ্রহ ও বিজ্ঞাপন লোড করতে পারে,CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so
+LINK,MEDIUM,https://cashraven.io/legal/terms-of-use,CashRaven consent/monetization SDK — consent_config/auth_state স্ট্রিংসহ কোড; ইউজারের সম্মতি ডেটা সংগ্রহ ও বিজ্ঞাপন লোড করতে পারে,CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so | CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so | CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so
+LINK,HIGH,https://cfygsjsgdj141.top/,"র‍্যান্ডম-দেখানো .top ডোমেইন — স্ট্যান্ডার্ড API নয়, সন্দেহজনক C2/কনফিগ হোস্ট",CRICFy_v7.4 (3)/dl/dl.xml
+INVALID_LINK,CRITICAL,https://default.url,"প্লেসহোল্ডার হোস্ট 'default.url' — বাইনারির ডিফল্ট ভ্যালু, আসল URL নয়",CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://developers.cashraven.io,CashRaven consent/monetization SDK — consent_config/auth_state স্ট্রিংসহ কোড; ইউজারের সম্মতি ডেটা সংগ্রহ ও বিজ্ঞাপন লোড করতে পারে,CRICFy_v7.4 (3)/classes.dex | CRICFy_v7.4 (3)/classes2.dex
+INVALID_LINK,CRITICAL,https://docs.rs/getrandom#nodejs-es-module-supportErrorinternal_codedescriptionunknown_code,ডক্স URL এর সাথে error payload concatenated — কার্যকরী লিংক নয়,CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so | CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so | CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so
+LINK,HIGH,https://dokoplay.xyz,"অজানা ডোমেইনে server_lookup.php?channel_id=premium — প্রিমিয়াম স্ট্রিম সোর্স খোঁজার endpoint, অবৈধ স্ট্রিমিং সন্দেহ",CRICFy_v7.4 (3)/classes.dex
+LINK,HIGH,https://dokoplay.xyz/server_lookup.php?channel_id=premium,"অজানা ডোমেইনে server_lookup.php?channel_id=premium — প্রিমিয়াম স্ট্রিম সোর্স খোঁজার endpoint, অবৈধ স্ট্রিমিং সন্দেহ",CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://fcmregistrations.googleapis.com/v1/projects/,Firebase Cloud Messaging registration — পুশ টোকেন নিবন্ধন,CRICFy_v7.4 (3)/classes.dex
+LINK,LOW,https://firebase.google.com/support/guides/disable-analytics,"Firebase সমর্থন পেজ — SDK-সংশ্লিষ্ট, সরাসরি ক্ষতি নয়",CRICFy_v7.4 (3)/classes.dex
+LINK,LOW,https://firebase.google.com/support/privacy/init-options,"Firebase সমর্থন পেজ — SDK-সংশ্লিষ্ট, সরাসরি ক্ষতি নয়",CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://firebaseinstallations.googleapis.com/v1/,Firebase Installations — ডিভাইস/ইনস্ট্যান্স আইডি নিবন্ধন ও ট্র্যাকিং,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://firebaseremoteconfig.googleapis.com/v1/projects/,Firebase Remote Config — সার্ভার থেকে অ্যাপ আচরণ (URL/পতাকা) পরিবর্তনযোগ্য; হাইজ্যাকিং ঝুঁকি,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://firebaseremoteconfigrealtime.googleapis.com/v1/projects/,Firebase Remote Config Realtime — রিয়েলটাইম সার্ভার কনফিগ,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://gateway.unityads.unity3d.com/v1,"Unity Ads গেটওয়ে — বিজ্ঞাপন সিস্টেম, ডিভাইস ID ও ইউসেজ ডেটা আদান-প্রদান করে",CRICFy_v7.4 (3)/classes.dex
+LINK,LOW,https://google.com/search,"hardcoded Google Search URL — অ্যাপের ভেতরে অস্বাভাবিক, কিন্তু ক্ষতিকর নয়",CRICFy_v7.4 (3)/classes.dex
+LINK,HIGH,https://newembedplay.xyz,অজানা .xyz ডোমেইন — এম্বেড প্লেয়ার/স্ট্রিম হোস্ট সন্দেহ,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://pagead2.googlesyndication.com/pagead/gen_204?id=gmob-apps,Google AdSense/Google syndication — বিজ্ঞাপন পরিবেশনা + ট্র্যাকিং,CRICFy_v7.4 (3)/classes.dex
+LINK,HIGH,https://pscp.tv,অজানা ভিডিও হোস্ট — কনটেন্ট উৎস যাচাই করা অসম্ভব,CRICFy_v7.4 (3)/classes.dex
+LINK,HIGH,https://pub-9610baca6bf84734bf9d40546dc754a6.r2.dev/config.txt,ক্লাউডফ্লেয়ার R2-তে হোস্ট করা রিমোট কনফিগ (config.txt) — অ্যাপ চালু হলে ডাউনলোড হয়; RCE/রিডাইরেক্ট প্রক্সি হতে পারে,CRICFy_v7.4 (3)/classes.dex
+LINK,HIGH,https://rtstv.xyz,অজানা .xyz ডোমেইন — সন্দেহজনক কনটেন্ট/স্ট্রিম হোস্ট,CRICFy_v7.4 (3)/classes.dex
+LINK,LOW,https://streams.videolan.org/upload/,VLC মিডিয়া স্ট্রিম রেফারেন্স — ডকুমেন্টেশন/নমুনা,CRICFy_v7.4 (3)/lib/arm64-v8a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/armeabi-v7a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86_64/libffmpegJNI.so
+LINK,MEDIUM,https://vk.com,Vkontakte (vk.com) — রুশ সোশ্যাল/ভিডিও; অননুমোদিত ভিডিও এম্বেড উৎস হতে পারে,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://www.cricbuzz.com/,Cricbuzz — কপিরাইটকৃত ক্রিকেট কনটেন্ট; অ্যাপে ব্যবহার অননুমোদিত স্ট্রিমিং হতে পারে,CRICFy_v7.4 (3)/ai/ai.xml | CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://www.googleadservices.com/pagead/conversion/app/deeplink?id_type=adid&sdk_version=,Google Ads conversion/deeplink — বিজ্ঞাপন রূপান্তর ট্র্যাকিং,CRICFy_v7.4 (3)/classes.dex
+LINK,MEDIUM,https://www.hotstar.com/,Disney+ Hotstar — কপিরাইটকৃত প্রিমিয়াম ক্রিকেট কনটেন্ট; অননুমোদিত স্ট্রিমিং হতে পারে (LEGAL RISK),CRICFy_v7.4 (3)/classes.dex

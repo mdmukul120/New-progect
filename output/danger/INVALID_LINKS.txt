@@ -1,0 +1,15 @@
+# অবৈধ/ভাঙা URL — বাইনারি string-pool থেকে ত্রুটিপূর্ণভাবে এক্সট্র্যাক্ট হয়েছে, এগুলো কার্যকর লিংক নয়
+# মোট: 3
+
+[CRITICAL] https://cashraven.io/legal/eulacreatecr_androidcreate_brandedcreate_headlesscreate_with_brandingversionapp_idapply_consent_configauth_stateauth_statusautostart_enabledautostart_supportedbattery
+    কারণ: বাইনারি string-pool সাইড-বা-সাইড concat — 'eula' এর সাথে SDK মেথড নাম লেগে গেছে
+    উৎস ফাইল: CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so
+
+[CRITICAL] https://default.url
+    কারণ: প্লেসহোল্ডার হোস্ট 'default.url' — বাইনারির ডিফল্ট ভ্যালু, আসল URL নয়
+    উৎস ফাইল: CRICFy_v7.4 (3)/classes.dex
+
+[CRITICAL] https://docs.rs/getrandom#nodejs-es-module-supportErrorinternal_codedescriptionunknown_code
+    কারণ: ডক্স URL এর সাথে error payload concatenated — কার্যকরী লিংক নয়
+    উৎস ফাইল: CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so | CRICFy_v7.4 (3)/lib/armeabi-v7a/libcr_android.so | CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so
+
