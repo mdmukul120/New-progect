@@ -26,9 +26,22 @@ URL_RE2 = re.compile(r'\b(?:ftp|ws|wss)://[A-Za-z0-9\-._~:/?#\[\]@!$&\'()*+,;=%]
 HOST_RE = re.compile(r'^[A-Za-z0-9.-]+$')
 
 TRAILING = ".,;:!?'\"()]}>"
+HTML_ENTITIES = ("&amp;", "&quot;", "&lt;", "&gt;", "&#", "&apos;", "&nbsp;")
 
 def clean_url(u: str) -> str:
     u = u.strip().strip("\x00")
+    # ১) দ্বিতীয় scheme ঢুকে গেলে সেখানে কেটো (merged printable strings)
+    low = u.lower()
+    for token in ("https://", "http://", "ftp://"):
+        idx = low.find(token, 1)
+        if idx > 0:
+            u = u[:idx]
+            low = u.lower()
+    # ২) HTML entity পেলে সেখানে কেটো (entity URL-এর অংশ হতে পারে না যেখানে encoding artifact)
+    for ent in HTML_ENTITIES:
+        idx = u.find(ent)
+        if idx > 0:
+            u = u[:idx]
     while u and u[-1] in TRAILING:
         # শেষে ) থাকলে balance check — সহজভাবে ছাঁটো যদি unmatched হয়
         if u[-1] == ')' and u.count('(') >= u.count(')'):
