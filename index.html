@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#06070b" />
+<title>ChinFetcher — Movies, Series, Download &amp; Stream</title>
+<meta name="description" content="Browse every provider, stream or download movies and web series in one fast, beautiful interface. Powered by the ChinFetcher API." />
+<link rel="preconnect" href="https://chinfetcher.duckdns.org" crossorigin />
+<link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+<link rel="preconnect" href="https://moviesmod.fi" crossorigin />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%236c5ce7'/%3E%3Cpath d='M40 30l30 20-30 20z' fill='white'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="assets/app.css" />
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="site-header" id="siteHeader">
+  <div class="header-inner">
+    <a class="brand" href="#" data-nav="home" aria-label="ChinFetcher home">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 4.5l14 7.5-14 7.5z" fill="#fff" stroke="none"/>
+        </svg>
+      </span>
+      <span class="brand-name">ChinFetcher</span>
+      <span class="brand-tag">v4</span>
+    </a>
+
+    <nav class="header-nav" aria-label="Primary">
+      <button data-nav="home" class="active">Home</button>
+      <button data-nav="browse">Browse</button>
+      <button data-nav="series">Web Series</button>
+      <button data-nav="search">Search</button>
+    </nav>
+
+    <div class="header-search">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="quickSearch" class="search-input" type="search" placeholder="Search movies, series, episodes…" autocomplete="off" aria-label="Search" />
+      <kbd class="search-kbd">/</kbd>
+    </div>
+
+    <button class="icon-btn" id="favBtn" title="My list" aria-label="My list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1L12 21l7.7-7.6 1.1-1a5.5 5.5 0 000-7.8z"/>
+      </svg>
+    </button>
+
+    <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="4.2"/>
+        <path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ================= HOME ================= -->
+  <section class="view active" id="view-home">
+
+    <!-- HERO -->
+    <div class="hero" id="hero">
+      <div class="hero-scrim"></div>
+      <div id="heroSlides"></div>
+      <div class="hero-dots" id="heroDots" role="tablist" aria-label="Featured"></div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats" id="stats">
+      <div class="stat"><div class="stat-val" id="statProviders">—</div><div class="stat-key">Providers</div></div>
+      <div class="stat"><div class="stat-val" id="statTitles">—</div><div class="stat-key">Titles Loaded</div></div>
+      <div class="stat"><div class="stat-val" id="statStreams">—</div><div class="stat-key">Stream Servers</div></div>
+      <div class="stat"><div class="stat-val" id="statLatency">—</div><div class="stat-key">API Latency</div></div>
+    </div>
+
+    <!-- PROVIDER STRIP -->
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title"><span class="accent"></span>Providers</h2>
+          <p class="section-sub">Every source aggregated by the ChinFetcher backend</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-ghost btn-sm" data-nav="browse">Open library
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="chips" id="providerStrip"></div>
+    </div>
+
+    <!-- TRENDING -->
+    <div class="section" id="trendingSection">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title"><span class="accent"></span>Trending Now</h2>
+          <p class="section-sub" id="trendingSub">Fresh releases across all providers</p>
+        </div>
+        <div class="section-actions">
+          <button class="icon-btn" data-scroll="trendingGrid" data-dir="-1" aria-label="Scroll left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+          <button class="icon-btn" data-scroll="trendingGrid" data-dir="1" aria-label="Scroll right">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="grid" id="trendingGrid"></div>
+    </div>
+
+    <!-- MULTI-PROVIDER FRESH -->
+    <div class="section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title"><span class="accent"></span>Fresh Across Providers</h2>
+          <p class="section-sub">Latest posts pulled in parallel from every source</p>
+        </div>
+        <div class="section-actions">
+          <button class="btn btn-ghost btn-sm" id="refreshHome">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-3-6.7M21 3v6h-6"/></svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="grid" id="freshGrid"></div>
+    </div>
+
+  </section>
+
+  <!-- ================= BROWSE ================= -->
+  <section class="view" id="view-browse">
+    <div class="page-head">
+      <h1 class="page-title">The <em>Library</em></h1>
+      <p class="page-desc">Pick a provider, choose a category, and dive in. Every post opens a page with streaming servers and download links.</p>
+    </div>
+
+    <div class="section" style="margin-top:0">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title"><span class="accent"></span>Provider</h2>
+        </div>
+      </div>
+      <div class="chips" id="providerList" role="tablist" aria-label="Providers"></div>
+    </div>
+
+    <div class="section" style="margin-top:26px">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title"><span class="accent"></span>Category</h2>
+          <p class="section-sub" id="categorySub">—</p>
+        </div>
+        <div class="section-actions">
+          <button class="icon-btn" id="sortBtn" title="Toggle sort" aria-label="Toggle sort">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="chips" id="categoryList"></div>
+    </div>
+
+    <div class="search-toolbar" style="margin-top:18px">
+      <div class="field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="filterInput" type="search" placeholder="Filter titles in this category…" autocomplete="off" aria-label="Filter titles" />
+      </div>
+      <select class="select" id="typeFilter" aria-label="Content type">
+        <option value="all">All content</option>
+        <option value="movie">Movies only</option>
+        <option value="series">Series only</option>
+      </select>
+      <select class="select" id="qualityFilter" aria-label="Quality">
+        <option value="all">Any quality</option>
+        <option value="2160p">4K / 2160p</option>
+        <option value="1080p">1080p</option>
+        <option value="720p">720p</option>
+        <option value="480p">480p</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" id="clearFilters" style="height:38px">Reset</button>
+    </div>
+
+    <div class="section-head" style="margin-top:22px">
+      <div>
+        <h2 class="section-title" id="browseTitle" style="font-size:16px">Results</h2>
+        <p class="section-sub" id="browseCount">Loading…</p>
+      </div>
+    </div>
+
+    <div class="grid" id="browseGrid"></div>
+    <div class="load-wrap"><button class="btn btn-ghost" id="loadMore" style="display:none">Load more</button></div>
+  </section>
+
+  <!-- ================= SEARCH ================= -->
+  <section class="view" id="view-search">
+    <div class="page-head">
+      <h1 class="page-title">Search <em>everything</em></h1>
+      <p class="page-desc">One query, every provider. Results stream in as each source answers.</p>
+    </div>
+
+    <div class="search-toolbar">
+      <div class="field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="searchInput" type="search" placeholder="e.g. The Raid, Breaking Bad, Ramayana…" autocomplete="off" aria-label="Search query" />
+      </div>
+      <select class="select" id="searchProvider" aria-label="Provider for search">
+        <option value="all">All providers</option>
+      </select>
+      <button class="btn btn-primary btn-sm" id="searchGo" style="height:38px">
+        Search
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+
+    <div class="section-head" style="margin-top:22px">
+      <div>
+        <h2 class="section-title" style="font-size:16px" id="searchTitle">Results</h2>
+        <p class="section-sub" id="searchCount">Type a query to begin</p>
+      </div>
+    </div>
+    <div class="grid" id="searchGrid"></div>
+  </section>
+
+  <!-- ================= SERIES ================= -->
+  <section class="view" id="view-series">
+    <div class="page-head">
+      <h1 class="page-title">Web <em>Series</em></h1>
+      <p class="page-desc">Season packs with full episode lists from every provider.</p>
+    </div>
+    <div class="search-toolbar">
+      <div class="field">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="seriesFilter" type="search" placeholder="Filter series…" autocomplete="off" aria-label="Filter series" />
+      </div>
+      <select class="select" id="seriesProvider" aria-label="Series provider"></select>
+    </div>
+    <div class="grid" id="seriesGrid"></div>
+    <div class="load-wrap"><button class="btn btn-ghost" id="seriesMore" style="display:none">Load more</button></div>
+  </section>
+
+</main>
+
+<!-- ================= BOTTOM NAV ================= -->
+<nav class="bottom-nav" aria-label="Mobile">
+  <div class="bottom-nav-inner">
+    <button data-nav="home" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+      Home
+    </button>
+    <button data-nav="browse">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+      Browse
+    </button>
+    <button data-nav="series">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="19" height="13" rx="2.4"/><path d="M8 3l2.5 3.5M16 3l-2.5 3.5"/></svg>
+      Series
+    </button>
+    <button data-nav="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      Search
+    </button>
+  </div>
+</nav>
+
+<!-- ================= DETAIL MODAL ================= -->
+<div class="modal" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card" id="detailCard">
+    <button class="modal-close" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div id="detailContent"></div>
+  </div>
+</div>
+
+<!-- ================= PLAYER MODAL ================= -->
+<div class="modal player-modal" id="playerModal" role="dialog" aria-modal="true" aria-label="Video player">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card wide">
+    <div class="player-shell" id="playerShell">
+      <div class="player-topbar" id="playerTopbar">
+        <span class="pt-badge" id="playerQuality">HD</span>
+        <span class="pt-title" id="playerTitle">Now playing</span>
+        <button class="icon-btn" data-close aria-label="Close player" style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+      <div id="playerStage"></div>
+    </div>
+    <div class="player-sources" id="playerSources"></div>
+  </div>
+</div>
+
+<!-- ================= FAVORITES MODAL ================= -->
+<div class="modal" id="favModal" role="dialog" aria-modal="true" aria-labelledby="favTitle">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <button class="modal-close" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="detail-body">
+      <h2 class="page-title" id="favTitle" style="font-size:24px;margin:0 0 4px">My list</h2>
+      <p class="section-sub" id="favCount" style="margin-bottom:20px">0 saved titles</p>
+      <div class="grid" id="favGrid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js" defer></script>
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>
