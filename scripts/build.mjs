@@ -613,16 +613,54 @@ function patchSubChunk(filename, rawCode) {
     }
   }
 
-  // 2. Patch homepage chunk (`index-*.js` other than entry) -> remove "About Hamyra" & "Frequently Asked Questions" clutter
+  // 2. Patch homepage chunk (`index-*.js` other than entry) -> remove "About Hamyra" & "Frequently Asked Questions" clutter via AST
   if (/^index-[A-Za-z0-9_-]+\.js$/.test(filename) && code.includes('Frequently Asked Questions')) {
-    const beforeLen = code.length;
-    code = code.replace(
-      /,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"About [^"]*?"\}[^]*?\}\)\]\}\)\s*,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"Frequently Asked Questions"\}[^]*?\}\)\]\}\)/,
-      ''
-    );
-    if (code.length !== beforeLen) {
-      modified = true;
-      console.log(`  [patched] Decluttered Homepage "About" & "FAQ" filler sections in ${filename}`);
+    try {
+      const ast = acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module' });
+      const removeSpans = [];
+      function walkHome(node) {
+        if (!node || typeof node !== 'object') return;
+        if (node.type === 'ArrayExpression' && Array.isArray(node.elements)) {
+          for (let idx = 0; idx < node.elements.length; idx++) {
+            const el = node.elements[idx];
+            if (!el) continue;
+            const snippet = code.slice(el.start, el.end);
+            if (
+              el.type === 'CallExpression' &&
+              el.arguments?.[0]?.type === 'Literal' &&
+              el.arguments[0].value === 'section' &&
+              snippet.includes('max-w-[900px]') &&
+              (snippet.includes('children:"About ') || snippet.includes('children:"Frequently Asked Questions"'))
+            ) {
+              // Remove leading comma from previous element or trailing comma if first
+              const prevEnd = idx > 0 && node.elements[idx - 1] ? node.elements[idx - 1].end : el.start;
+              removeSpans.push([prevEnd, el.end]);
+            }
+          }
+        }
+        for (const k of Object.keys(node)) {
+          if (k === 'start' || k === 'end' || k === 'loc') continue;
+          const v = node[k];
+          if (Array.isArray(v)) {
+            for (const item of v) walkHome(item);
+          } else if (v && typeof v.type === 'string') {
+            walkHome(v);
+          }
+        }
+      }
+      walkHome(ast);
+      if (removeSpans.length > 0) {
+        removeSpans.sort((a, b) => b[0] - a[0]);
+        for (const [s, e] of removeSpans) {
+          code = code.slice(0, s) + code.slice(e);
+        }
+        // Verify AST parses cleanly after slicing
+        acorn.parse(code, { ecmaVersion: 'latest', sourceType: 'module' });
+        modified = true;
+        console.log(`  [patched] AST decluttered ${removeSpans.length} Homepage filler section(s) in ${filename}`);
+      }
+    } catch (e) {
+      console.warn(`  [warn] Skipped Homepage filler AST removal in ${filename}: ${e.message}`);
     }
   }
 
