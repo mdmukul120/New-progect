@@ -1,0 +1,65 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+def keystoreFile = System.getenv("NOVACUT_STORE_FILE")
+
+android {
+    namespace 'com.novacut.studio'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.novacut.studio"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            if (keystoreFile != null) {
+                storeFile file(keystoreFile)
+                storePassword System.getenv("NOVACUT_STORE_PASS")
+                keyAlias System.getenv("NOVACUT_KEY_ALIAS")
+                keyPassword System.getenv("NOVACUT_KEY_PASS")
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig keystoreFile != null ? signingConfigs.release : signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = '17'
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += ["$buildDir/generated/assets/www"]
+        }
+    }
+}
+
+// Copy the NovaCut web app into assets/www so the APK works fully offline
+tasks.register('copyWebAssets', Copy) {
+    from '../app'
+    into "$buildDir/generated/assets/www"
+}
+preBuild.dependsOn 'copyWebAssets'
+
+dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.webkit:webkit:1.8.0'
+}

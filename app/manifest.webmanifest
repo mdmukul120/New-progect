@@ -1,0 +1,27 @@
+{
+  "name": "NovaCut — Premium Video Editor",
+  "short_name": "NovaCut",
+  "description": "প্রিমিয়াম ভিডিও এডিটর — Premium video editor with AI tools, no watermark",
+  "lang": "bn",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0d14",
+  "theme_color": "#0d0d14",
+  "categories": ["video", "photo", "productivity"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

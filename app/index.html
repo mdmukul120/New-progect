@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#0d0d14">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>NovaCut — Premium Video Editor</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- loader -->
+  <div id="app-loader">
+    <div class="loader-logo">▶</div>
+    <div class="loader-name">NovaCut</div>
+    <div class="loader-tag" data-i18n="app.tagline">প্রিমিয়াম ভিডিও এডিটর</div>
+    <div class="loader-bar"><i></i></div>
+  </div>
+
+  <!-- top bar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="logo">▶</div>
+      <div class="proj-title">
+        <b id="project-name">NovaCut</b>
+        <span class="proj-sub" data-i18n="app.tagline">প্রিমিয়াম ভিডিও এডিটর</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn" id="btn-lang" data-i18n-title="top.language" title="ভাষা">বাং/EN</button>
+      <button class="icon-btn" id="btn-projects" data-i18n-title="top.projects" title="প্রজেক্ট">📁</button>
+      <button class="icon-btn" id="btn-new" data-i18n-title="top.new" title="নতুন প্রজেক্ট">＋</button>
+      <button class="icon-btn" id="btn-undo" data-i18n-title="top.undo" title="আন্ডু" disabled>↩</button>
+      <button class="icon-btn" id="btn-redo" data-i18n-title="top.redo" title="রিডু" disabled>↪</button>
+      <button class="icon-btn" id="btn-settings" data-i18n-title="top.settings" title="সেটিংস">⚙</button>
+      <button class="btn btn-export" id="btn-export"><span>⚡</span> <span data-i18n="top.export">এক্সপোর্ট</span></button>
+    </div>
+  </header>
+
+  <!-- main -->
+  <main class="main">
+    <!-- preview -->
+    <section class="preview-wrap">
+      <div class="preview-stage">
+        <canvas id="preview-canvas"></canvas>
+      </div>
+      <div class="transport">
+        <button class="icon-btn" id="btn-start" data-i18n-title="transport.play" title="শুরু">⏮</button>
+        <button class="play-btn" id="btn-play">▶</button>
+        <button class="icon-btn" id="btn-split" data-i18n-title="transport.split" title="স্প্লিট">✂</button>
+        <div class="time-display"><b id="time-cur">0:00</b> / <span id="time-dur">0:00</span></div>
+        <button class="btn btn-ghost btn-sm" id="btn-import">＋ <span data-i18n="import.media">মিডিয়া যোগ করুন</span></button>
+      </div>
+    </section>
+
+    <!-- timeline -->
+    <section class="timeline-wrap" id="timeline"></section>
+
+    <!-- tool tabs -->
+    <nav class="tool-tabs">
+      <button class="tool-tab active" data-tool="edit"><i>🎬</i><span data-i18n="tool.edit">ক্লিপ</span></button>
+      <button class="tool-tab" data-tool="filters"><i>🎨</i><span data-i18n="tool.filters">ফিল্টার</span></button>
+      <button class="tool-tab" data-tool="adjust"><i>🎚</i><span data-i18n="tool.adjust">অ্যাডজাস্ট</span></button>
+      <button class="tool-tab" data-tool="text"><i>𝐓</i><span data-i18n="tool.text">টেক্সট</span></button>
+      <button class="tool-tab" data-tool="stickers"><i>😀</i><span data-i18n="tool.stickers">স্টিকার</span></button>
+      <button class="tool-tab" data-tool="audio"><i>🎵</i><span data-i18n="tool.audio">অডিও</span></button>
+      <button class="tool-tab" data-tool="ai"><i>✨</i><span data-i18n="tool.ai">AI</span></button>
+      <button class="tool-tab" data-tool="aspect"><i>📐</i><span data-i18n="tool.aspect">ফরম্যাট</span></button>
+    </nav>
+  </main>
+
+  <!-- tool panel (bottom sheet) -->
+  <aside class="tool-panel" id="tool-panel"></aside>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/timeline.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/exporter.js"></script>
+  <script src="js/tools.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    /* register service worker for PWA/offline */
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
