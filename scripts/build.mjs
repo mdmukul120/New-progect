@@ -658,7 +658,10 @@ async function main() {
   // 2. Probe upstream APIs for CORS behavior from non-hamyra Origin
   const needEdgeProxy = await checkCorsNeed('https://edge.hamyra.xyz/bongo/sports');
   const needApiHamyraProxy = await checkCorsNeed('https://api.hamyra.xyz/mlbd/list?page=1');
-  console.log(`CORS Proxy needed -> edge.hamyra.xyz: ${needEdgeProxy}, api.hamyra.xyz: ${needApiHamyraProxy}`);
+  const needTmdbHlsProxy = await checkCorsNeed('https://edge.hamyra.xyz/tmdb/hls');
+  console.log(
+    `CORS Proxy needed -> edge.hamyra.xyz: ${needEdgeProxy}, api.hamyra.xyz: ${needApiHamyraProxy}, edge/tmdb/hls: ${needTmdbHlsProxy}`
+  );
 
   // 3. BFS Crawl & Download all JS/CSS assets + logos
   const assetQueue = [entryJs, entryCss, ...initialPreloads];
@@ -709,8 +712,14 @@ async function main() {
       // stay on direct `https://edge.hamyra.xyz/...` so <video>/<a>/hls.js stream at full CDN speed!
       if (needEdgeProxy) {
         // Protect direct high-bandwidth media endpoints built via `${var}/bongo/hls` etc.
+        // Note: /tmdb/hls returns small text M3U8 manifests fetched via XHR/fetch by hls.js, so if edge/tmdb/hls
+        // requires Origin: www.hamyra.xyz, we route /tmdb/hls through /api/edge while keeping /tmdb/seg direct!
+        const directMediaPattern = needTmdbHlsProxy
+          ? 'bongo\\/hls|bongo\\/live|tmdb\\/seg|mlbd\\/stream|download\\/apk'
+          : 'bongo\\/hls|bongo\\/live|tmdb\\/hls|tmdb\\/seg|mlbd\\/stream|download\\/apk';
+
         text = text.replace(
-          /`\$\{([A-Za-z0-9_$]+)\}\/(bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)/g,
+          new RegExp(`\`\\$\\{([A-Za-z0-9_$]+)\\}\\/(${directMediaPattern})`, 'g'),
           '`https://edge.hamyra.xyz/$2'
         );
         // Replace standalone string literal "https://edge.hamyra.xyz" -> runtime full-origin expression
@@ -720,12 +729,12 @@ async function main() {
         );
         // Replace quoted non-media prefixes "https://edge.hamyra.xyz/<path>"
         text = text.replace(
-          /"https:\/\/edge\.hamyra\.xyz\/(?!bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)([^"]*)"/g,
+          new RegExp(`"https:\\/\\/edge\\.hamyra\\.xyz\\/(?!${directMediaPattern})([^"]*)"`, 'g'),
           '((typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz")+"/$1")'
         );
         // Replace template literal non-media prefixes `https://edge.hamyra.xyz/<path>`
         text = text.replace(
-          /`https:\/\/edge\.hamyra\.xyz\/(?!bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)/g,
+          new RegExp(`\`https:\\/\\/edge\\.hamyra\\.xyz\\/(?!${directMediaPattern})`, 'g'),
           '`${typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz"}/'
         );
       }
@@ -777,6 +786,25 @@ async function main() {
         }
       } catch (err) {
         console.warn(`  [warn] Optional root static file skipped (${relPath}): ${err.message}`);
+        if (relPath === '/site.webmanifest') {
+          const fallbackManifest = JSON.stringify(
+            {
+              name: 'Hamyra — Free HD Streaming & Downloads',
+              short_name: 'Hamyra',
+              start_url: '/',
+              display: 'standalone',
+              background_color: '#070b16',
+              theme_color: '#070b16',
+              icons: [
+                { src: '/favicon.png', sizes: '192x192', type: 'image/png' },
+                { src: '/hamyra-icon-512.png', sizes: '512x512', type: 'image/png' },
+              ],
+            },
+            null,
+            2
+          );
+          await fs.writeFile(path.join(DIST_DIR, 'site.webmanifest'), fallbackManifest, 'utf8');
+        }
       }
     })
   );

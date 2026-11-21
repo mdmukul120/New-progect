@@ -61,6 +61,10 @@ export default async function handler(req, res) {
     Referer: 'https://www.hamyra.xyz/',
   };
 
+  if (targetKey === 'serverfn') {
+    forwardHeaders['x-tsr-serverFn'] = 'true';
+  }
+
   const passThroughHeaders = [
     'accept',
     'accept-language',
