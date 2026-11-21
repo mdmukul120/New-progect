@@ -113,7 +113,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         webView.addJavascriptInterface(Bridge(), "NovaCutBridge")
-        webView.loadUrl("file:///android_asset/www/index.html")
+        // web app is packaged at assets root (assets/index.html, assets/js/...)
+        webView.loadUrl("file:///android_asset/index.html")
 
         // ask mic permission up-front (used by AI captions)
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
