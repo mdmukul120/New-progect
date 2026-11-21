@@ -193,6 +193,10 @@ function applyBrandAndLimeThemeToJs(rawCode) {
   code = code.replace(/How Hamyra /g, 'How Mukul Plus ');
   code = code.replace(/Terms for using Hamyra/g, 'Terms for using Mukul Plus');
   code = code.replace(/Free from Hamyra/g, 'Free from Mukul Plus');
+  code = code.replace(/Hamyra HD/g, 'Mukul Plus HD');
+  code = code.replace(/in HD on Hamyra/g, 'in HD on Mukul Plus');
+  code = code.replace(/Hamyra-তে/g, 'Mukul Plus-এ');
+  code = code.replace(/\| \$\{[A-Za-z0-9_$]+\}`/g, '| Mukul Plus`');
   code = code.replace(/children:"Hamyra"/g, 'children:"Mukul Plus"');
   code = code.replace(/Watch together on Hamyra/g, 'Watch together on Mukul Plus');
   code = code.replace(/\["Hamyra",/g, '["MukulPlus",');
@@ -376,7 +380,7 @@ function patchEntryChunk(rawCode) {
   // 9. ZERO-LAG OPTIMIZATION: Kill WebGL2 30fps full-screen shader canvas U3() and hero pixel-readback z3()
   ({ code } = replaceFunctionBodyBySignature(
     code,
-    /function\s+([A-Za-z0-9_$]+)\(\)\{const [A-Za-z0-9_$]+=[A-Za-z0-9_$]+\.useRef\(null\),[A-Za-z0-9_$]+=[A-Za-z0-9_$]+\(\{select:[A-Za-z0-9_$]+=>[A-Za-z0-9_$]+\.location\.pathname\.startsWith\("\/watch"\)/,
+    /function\s+([A-Za-z0-9_$]+)\(\)\{[\s\S]*?liquid-bg-active/,
     (m) => `function ${m[1]}(){return null}`,
     'Zero-Lag: WebGL2 30fps full-screen shader loop U3() -> null'
   ));
