@@ -6,6 +6,7 @@ on:
       - '.github/workflows/download-and-categorize.yml'
       - 'process_links.py'
       - 'danger_scan.py'
+      - 'fetch_matches.py'
   workflow_dispatch:
 
 permissions:
@@ -61,6 +62,9 @@ jobs:
 
       - name: Danger scan (অবৈধ/সন্দেহজনক ফাইল ও লিংক)
         run: python3 danger_scan.py
+
+      - name: Fetch matches from app endpoints
+        run: python3 fetch_matches.py
 
       - name: Commit categorized output back to repo
         run: |
