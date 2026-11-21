@@ -9,6 +9,9 @@ on:
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -69,11 +72,10 @@ jobs:
           if-no-files-found: error
 
       - name: Attach APK to GitHub Release
-        if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0
-          name: NovaCut v1.0
+          name: NovaCut v1.0 — Premium Video Editor
           files: NovaCut-v1.0.apk
           body: |
             NovaCut — Premium Video Editor (Android APK)
@@ -83,3 +85,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Commit APK into dist/ (downloadable from repo)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdir -p dist
+          cp NovaCut-v1.0.apk dist/NovaCut-v1.0.apk
+          git add dist/NovaCut-v1.0.apk
+          git commit -m "chore: built APK v1.0 [skip ci]" || echo "no changes to commit"
+          git push || echo "push failed (non-fatal)"

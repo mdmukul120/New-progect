@@ -27,14 +27,13 @@ A CapCut-style premium video editing app — **no watermark, every feature is fr
 
 ## 📱 APK পাওয়ার ৩টি উপায় / 3 Ways to Get the APK
 
-### উপায় ১ — GitHub Actions (সবচেয়ে সহজ / easiest, no computer setup)
+### উপায় ১ — GitHub Release (সবচেয়ে সহজ / easiest, no computer setup)
 
-রিপোতে পুশ হলেই GitHub নিজে APK বিল্ড করে দেয়:
+1. রিপোর **Releases** পেজে যান → **NovaCut v1.0** থেকে `NovaCut-v1.0.apk` ডাউনলোড করুন
+2. (অথবা `dist/NovaCut-v1.0.apk` ফাইলটি রিপোতেই আছে)
+3. ফোনে ইনস্টল করুন (Settings → Install unknown apps অনুমতি দিন)
 
-1. **Actions** ট্যাবে যান → **Build NovaCut Android APK** → **Run workflow**
-2. বিল্ড শেষ হলে (≈৩ মিনিট) **Artifacts** থেকে `NovaCut-APK` ডাউনলোড করুন
-3. অথবা রিলিজ পেজ থেকে `NovaCut-v1.0.apk` নিন
-4. ফোনে ইনস্টল করুন (Settings → Install unknown apps অনুমতি দিন)
+> রিপোতে নতুন কোড পুশ হলেই GitHub Actions অটো-বিল্ড চালু হয় এবং APK আপডেট করে দেয় — Actions ট্যাব থেকেও আর্টিফ্যাক্ট ডাউনলোড করা যায়।
 
 ### উপায় ২ — Android Studio
 
