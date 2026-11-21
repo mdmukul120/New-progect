@@ -51,9 +51,9 @@ android {
     }
 }
 
-// Copy the NovaCut web app into assets/www so the APK works fully offline
+// Copy the NovaCut web app (repo-root /app) into assets/www so the APK works fully offline
 tasks.register('copyWebAssets', Copy) {
-    from '../app'
+    from new File(rootProject.projectDir, '../app')
     into "$buildDir/generated/assets/www"
 }
 preBuild.dependsOn 'copyWebAssets'

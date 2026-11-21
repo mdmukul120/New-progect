@@ -46,7 +46,15 @@ jobs:
           NOVACUT_STORE_PASS: novacut-ci
           NOVACUT_KEY_ALIAS: novacut
           NOVACUT_KEY_PASS: novacut-ci
-        run: gradle :app:assembleRelease --no-daemon --stacktrace
+        run: |
+          set +e
+          gradle :app:assembleRelease --no-daemon --stacktrace 2>&1 | tee build.log
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            echo "::error::Gradle build failed (exit $code). Last 40 log lines:"
+            tail -40 build.log | while IFS= read -r line; do echo "::error::$line"; done
+            exit "$code"
+          fi
 
       - name: Rename APK
         run: |
