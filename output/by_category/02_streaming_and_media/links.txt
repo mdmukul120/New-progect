@@ -1,0 +1,9 @@
+http://dashif.org/guidelines/last-segment-number
+http://dashif.org/guidelines/thumbnail_tile
+http://dashif.org/guidelines/trickmode
+http://dashif.org/thumbnail_tile
+https://aomedia.org/emsg/ID3
+https://streams.videolan.org/upload/
+https://vk.com
+https://www.cricbuzz.com/
+https://www.hotstar.com/

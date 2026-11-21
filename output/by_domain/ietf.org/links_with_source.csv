@@ -1,2 +1,2 @@
-link,domain,type,source_files
-https://www.ietf.org/rfc/rfc3339.txt,ietf.org,txt,CRICFy_v7.4 (3)/google/protobuf/timestamp.proto | CRICFy_v7.4 (3)/src/google/protobuf/timestamp.proto
+link,domain,type,category,source_files
+https://www.ietf.org/rfc/rfc3339.txt,ietf.org,txt,04_xml_namespace_and_schema,CRICFy_v7.4 (3)/google/protobuf/timestamp.proto | CRICFy_v7.4 (3)/src/google/protobuf/timestamp.proto

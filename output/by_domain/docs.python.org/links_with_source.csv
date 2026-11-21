@@ -1,2 +1,2 @@
-link,domain,type,source_files
-https://docs.python.org/2/library/time.html#time.strftime,docs.python.org,web_page,CRICFy_v7.4 (3)/google/protobuf/timestamp.proto | CRICFy_v7.4 (3)/src/google/protobuf/timestamp.proto
+link,domain,type,category,source_files
+https://docs.python.org/2/library/time.html#time.strftime,docs.python.org,web_page,05_docs_library_license,CRICFy_v7.4 (3)/google/protobuf/timestamp.proto | CRICFy_v7.4 (3)/src/google/protobuf/timestamp.proto

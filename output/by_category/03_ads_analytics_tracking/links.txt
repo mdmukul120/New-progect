@@ -1,0 +1,12 @@
+https://app-measurement.com/a
+https://app-measurement.com/s/d
+https://fcmregistrations.googleapis.com/v1/projects/
+https://firebase.google.com/support/guides/disable-analytics
+https://firebase.google.com/support/privacy/init-options
+https://firebaseinstallations.googleapis.com/v1/
+https://firebaseremoteconfig.googleapis.com/v1/projects/
+https://firebaseremoteconfigrealtime.googleapis.com/v1/projects/
+https://gateway.unityads.unity3d.com/v1
+https://google.com/search
+https://pagead2.googlesyndication.com/pagead/gen_204?id=gmob-apps
+https://www.googleadservices.com/pagead/conversion/app/deeplink?id_type=adid&sdk_version=

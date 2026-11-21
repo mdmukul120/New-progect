@@ -1,2 +1,2 @@
-link,domain,type,source_files
-http://semver.org,semver.org,web_page,CRICFy_v7.4 (3)/google/protobuf/api.proto | CRICFy_v7.4 (3)/src/google/protobuf/api.proto
+link,domain,type,category,source_files
+http://semver.org,semver.org,web_page,04_xml_namespace_and_schema,CRICFy_v7.4 (3)/google/protobuf/api.proto | CRICFy_v7.4 (3)/src/google/protobuf/api.proto

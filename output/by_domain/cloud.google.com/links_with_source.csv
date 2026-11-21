@@ -1,2 +1,2 @@
-link,domain,type,source_files
-https://cloud.google.com/apis/design/glossary,cloud.google.com,other_http,CRICFy_v7.4 (3)/google/protobuf/api.proto | CRICFy_v7.4 (3)/src/google/protobuf/api.proto
+link,domain,type,category,source_files
+https://cloud.google.com/apis/design/glossary,cloud.google.com,other_http,05_docs_library_license,CRICFy_v7.4 (3)/google/protobuf/api.proto | CRICFy_v7.4 (3)/src/google/protobuf/api.proto

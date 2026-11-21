@@ -1,0 +1,10 @@
+link,domain,type,category,source_files
+http://dashif.org/guidelines/last-segment-number,dashif.org,other_http,02_streaming_and_media,CRICFy_v7.4 (3)/classes.dex
+http://dashif.org/guidelines/thumbnail_tile,dashif.org,other_http,02_streaming_and_media,CRICFy_v7.4 (3)/classes.dex
+http://dashif.org/guidelines/trickmode,dashif.org,other_http,02_streaming_and_media,CRICFy_v7.4 (3)/classes.dex
+http://dashif.org/thumbnail_tile,dashif.org,other_http,02_streaming_and_media,CRICFy_v7.4 (3)/classes.dex
+https://aomedia.org/emsg/ID3,aomedia.org,other_http,02_streaming_and_media,CRICFy_v7.4 (3)/classes.dex
+https://streams.videolan.org/upload/,streams.videolan.org,web_page,02_streaming_and_media,CRICFy_v7.4 (3)/lib/arm64-v8a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/armeabi-v7a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86_64/libffmpegJNI.so
+https://vk.com,vk.com,web_page,02_streaming_and_media,CRICFy_v7.4 (3)/classes.dex
+https://www.cricbuzz.com/,cricbuzz.com,web_page,02_streaming_and_media,CRICFy_v7.4 (3)/ai/ai.xml | CRICFy_v7.4 (3)/classes.dex
+https://www.hotstar.com/,hotstar.com,web_page,02_streaming_and_media,CRICFy_v7.4 (3)/classes.dex

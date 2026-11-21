@@ -1,2 +1,2 @@
-link,domain,type,source_files
-https://streams.videolan.org/upload/,streams.videolan.org,web_page,CRICFy_v7.4 (3)/lib/arm64-v8a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/armeabi-v7a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86_64/libffmpegJNI.so
+link,domain,type,category,source_files
+https://streams.videolan.org/upload/,streams.videolan.org,web_page,02_streaming_and_media,CRICFy_v7.4 (3)/lib/arm64-v8a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/armeabi-v7a/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86/libffmpegJNI.so | CRICFy_v7.4 (3)/lib/x86_64/libffmpegJNI.so

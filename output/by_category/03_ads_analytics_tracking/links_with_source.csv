@@ -1,0 +1,13 @@
+link,domain,type,category,source_files
+https://app-measurement.com/a,app-measurement.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://app-measurement.com/s/d,app-measurement.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://fcmregistrations.googleapis.com/v1/projects/,fcmregistrations.googleapis.com,web_page,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://firebase.google.com/support/guides/disable-analytics,firebase.google.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://firebase.google.com/support/privacy/init-options,firebase.google.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://firebaseinstallations.googleapis.com/v1/,firebaseinstallations.googleapis.com,web_page,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://firebaseremoteconfig.googleapis.com/v1/projects/,firebaseremoteconfig.googleapis.com,web_page,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://firebaseremoteconfigrealtime.googleapis.com/v1/projects/,firebaseremoteconfigrealtime.googleapis.com,web_page,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://gateway.unityads.unity3d.com/v1,gateway.unityads.unity3d.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://google.com/search,google.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://pagead2.googlesyndication.com/pagead/gen_204?id=gmob-apps,pagead2.googlesyndication.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex
+https://www.googleadservices.com/pagead/conversion/app/deeplink?id_type=adid&sdk_version=,googleadservices.com,other_http,03_ads_analytics_tracking,CRICFy_v7.4 (3)/classes.dex

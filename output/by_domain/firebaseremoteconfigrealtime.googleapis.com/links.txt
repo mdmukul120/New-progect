@@ -1,0 +1,1 @@
+https://firebaseremoteconfigrealtime.googleapis.com/v1/projects/
