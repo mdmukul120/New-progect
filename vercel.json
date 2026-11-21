@@ -1,0 +1,62 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/logos/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=604800, stale-while-revalidate=86400"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "autoplay=(*), fullscreen=(*), picture-in-picture=(*), microphone=(self)"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/_serverFn/:path*",
+      "destination": "/api/proxy?__target=serverfn&__path=:path*"
+    },
+    {
+      "source": "/api/edge/:path*",
+      "destination": "/api/proxy?__target=edge&__path=:path*"
+    },
+    {
+      "source": "/api/apihamyra/:path*",
+      "destination": "/api/proxy?__target=apihamyra&__path=:path*"
+    },
+    {
+      "source": "/((?!api/|assets/|logos/|favicon\\.png|hamyra-|icon-|og-image\\.jpg|site\\.webmanifest|robots\\.txt).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
