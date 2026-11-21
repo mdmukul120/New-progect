@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/download-and-categorize.yml'
       - 'process_links.py'
+      - 'danger_scan.py'
   workflow_dispatch:
 
 permissions:
@@ -58,11 +59,14 @@ jobs:
           ls -lh output/
           ls -lh output/CRICFy_links_categorized.zip
 
+      - name: Danger scan (অবৈধ/সন্দেহজনক ফাইল ও লিংক)
+        run: python3 danger_scan.py
+
       - name: Commit categorized output back to repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A output/ || true
+          git add -A output/ DANGER.md || true
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
