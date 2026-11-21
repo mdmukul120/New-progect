@@ -159,10 +159,7 @@
     const startWall = performance.now();
 
     function renderExportFrame(tSec) {
-      ctx.save();
-      ctx.scale(res.w / (canvas._ncPrevW || res.w), res.h / (canvas._ncPrevH || res.h));
-      ctx.restore();
-      /* render via engine's compositor into this canvas: temporarily swap */
+      /* render via the export compositor onto this canvas */
       renderToCanvas(ctx, res.w, res.h, tSec);
     }
 
@@ -176,49 +173,131 @@
       const hit = NC.store.clipAtTime(tSec);
       if (hit && hit.clip) {
         const clip = hit.clip;
-        const el = ensureEl(clip);
-        if (el) {
-          const isVideo = clip.type === 'video';
-          if (isVideo) {
-            const target = clip.trimStart + hit.localT * (clip.speed || 1);
-            if (el.readyState >= 1 && Math.abs((el.currentTime || 0) - target) > 0.02) {
-              try {
-                el.currentTime = target;
-              } catch (e) {}
+        const tdur = Math.min((clip.transition && clip.transition.duration) || 0.5, hit.duration);
+        const hasTransition =
+          hit.index > 0 && clip.transition && clip.transition.type && clip.transition.type !== 'none';
+        if (hasTransition && hit.localT < tdur) {
+          /* transition window: blend previous clip's end frame with current clip */
+          const p = Math.max(0, Math.min(1, hit.localT / tdur));
+          const type = clip.transition.type;
+          const prevClip = project.clips[hit.index - 1];
+          const drawPrev = (alpha, geom) => {
+            if (prevClip) {
+              const prevDur = NC.store.clipDuration(prevClip);
+              drawClipExport(targetCtx, prevClip, Math.max(0, prevDur - 0.001), alpha, W, H, geom);
+            } else {
+              targetCtx.save();
+              targetCtx.globalAlpha = alpha;
+              targetCtx.fillStyle = '#000';
+              targetCtx.fillRect(0, 0, W, H);
+              targetCtx.restore();
             }
-            if (el.paused) {
-              el.playbackRate = clip.speed || 1;
-              const pr = el.play();
-              if (pr && pr.catch) pr.catch(() => {});
+          };
+          switch (type) {
+            case 'fade':
+              drawPrev(1);
+              drawClipExport(targetCtx, clip, hit.localT, p, W, H);
+              break;
+            case 'fade-black':
+              drawPrev(1 - p);
+              drawClipExport(targetCtx, clip, hit.localT, p, W, H);
+              break;
+            case 'slide-left':
+              drawPrev(1, { dx: -p * W, dy: 0, dw: W, dh: H });
+              drawClipExport(targetCtx, clip, hit.localT, 1, W, H, { dx: (1 - p) * W, dy: 0, dw: W, dh: H });
+              break;
+            case 'slide-right':
+              drawPrev(1, { dx: p * W, dy: 0, dw: W, dh: H });
+              drawClipExport(targetCtx, clip, hit.localT, 1, W, H, { dx: -(1 - p) * W, dy: 0, dw: W, dh: H });
+              break;
+            case 'slide-up':
+              drawPrev(1, { dx: 0, dy: p * H, dw: W, dh: H });
+              drawClipExport(targetCtx, clip, hit.localT, 1, W, H, { dx: 0, dy: -(1 - p) * H, dw: W, dh: H });
+              break;
+            case 'zoom': {
+              drawPrev(1);
+              const scale = 1.35 - 0.35 * p;
+              const dw = W * scale;
+              const dh = H * scale;
+              drawClipExport(targetCtx, clip, hit.localT, p, W, H, {
+                dx: (W - dw) / 2,
+                dy: (H - dh) / 2,
+                dw,
+                dh,
+              });
+              break;
             }
-            /* volume */
-            const v = clip.muted ? 0 : (clip.volume != null ? clip.volume : 1) * (project.masterVolume || 1);
-            try {
-              el.volume = Math.max(0, Math.min(1, v));
-            } catch (e) {}
+            case 'wipe': {
+              drawPrev(1);
+              targetCtx.save();
+              targetCtx.beginPath();
+              targetCtx.rect(0, 0, W * p, H);
+              targetCtx.clip();
+              drawClipExport(targetCtx, clip, hit.localT, 1, W, H);
+              targetCtx.restore();
+              break;
+            }
+            default:
+              drawClipExport(targetCtx, clip, hit.localT, 1, W, H);
           }
-          const srcW = isVideo ? el.videoWidth || 16 : el.naturalWidth || 16;
-          const srcH = isVideo ? el.videoHeight || 9 : el.naturalHeight || 9;
-          const fStr = (NC.engine.FILTERS[clip.filterId] || '') + ' ' + NC.engine.adjustFilterString(clip.adjust);
-          targetCtx.save();
-          if (fStr.trim()) targetCtx.filter = fStr.trim();
-          drawCover(targetCtx, el, srcW, srcH, clip.focal, 1, { dx: 0, dy: 0, dw: W, dh: H });
-          targetCtx.restore();
-          /* vignette */
-          const vig = (clip.adjust && clip.adjust.vignette) || 0;
-          if (vig > 0) {
-            const g = targetCtx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.max(W, H) * 0.72);
-            g.addColorStop(0, 'rgba(0,0,0,0)');
-            g.addColorStop(1, 'rgba(0,0,0,' + Math.min(0.85, vig) + ')');
-            targetCtx.fillStyle = g;
-            targetCtx.fillRect(0, 0, W, H);
-          }
+        } else {
+          drawClipExport(targetCtx, clip, hit.localT, 1, W, H);
         }
       }
       /* texts + stickers (scaled from preview-space 540x960 reference) */
       const scaleRef = W / 540;
       for (const s of project.stickers) drawStickerExport(targetCtx, s, tSec, W, H, scaleRef);
       for (const tx of project.texts) drawTextExport(targetCtx, tx, tSec, W, H, scaleRef);
+    }
+
+    function drawClipExport(targetCtx, clip, localT, alpha, W, H, geom) {
+      const el = ensureEl(clip);
+      if (!el) return;
+      const isVideo = clip.type === 'video';
+      if (isVideo) {
+        const target = clip.trimStart + localT * (clip.speed || 1);
+        if (el.readyState >= 1 && Math.abs((el.currentTime || 0) - target) > 0.02) {
+          try {
+            el.currentTime = target;
+          } catch (e) {}
+        }
+        if (el.paused) {
+          el.playbackRate = clip.speed || 1;
+          const pr = el.play();
+          if (pr && pr.catch) pr.catch(() => {});
+        }
+        const v = clip.muted ? 0 : (clip.volume != null ? clip.volume : 1) * (project.masterVolume || 1);
+        try {
+          el.volume = Math.max(0, Math.min(1, v));
+        } catch (e) {}
+      }
+      const srcW = isVideo ? el.videoWidth || 16 : el.naturalWidth || 16;
+      const srcH = isVideo ? el.videoHeight || 9 : el.naturalHeight || 9;
+      const fStr = (NC.engine.FILTERS[clip.filterId] || '') + ' ' + NC.engine.adjustFilterString(clip.adjust);
+      const g = geom || { dx: 0, dy: 0, dw: W, dh: H };
+      targetCtx.save();
+      if (fStr.trim()) targetCtx.filter = fStr.trim();
+      drawCover(targetCtx, el, srcW, srcH, clip.focal, alpha, g);
+      targetCtx.restore();
+      /* vignette */
+      const vig = (clip.adjust && clip.adjust.vignette) || 0;
+      if (vig > 0) {
+        const grad = targetCtx.createRadialGradient(
+          g.dx + g.dw / 2,
+          g.dy + g.dh / 2,
+          Math.min(g.dw, g.dh) * 0.25,
+          g.dx + g.dw / 2,
+          g.dy + g.dh / 2,
+          Math.max(g.dw, g.dh) * 0.72
+        );
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,' + Math.min(0.85, vig) + ')');
+        targetCtx.save();
+        targetCtx.globalAlpha = alpha;
+        targetCtx.fillStyle = grad;
+        targetCtx.fillRect(g.dx, g.dy, g.dw, g.dh);
+        targetCtx.restore();
+      }
     }
 
     function ensureEl(clip) {

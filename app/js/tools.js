@@ -649,8 +649,17 @@
 
   function init(panel) {
     panelEl = panel;
-    NC.store.on('selection', () => {
-      // re-render only if a tool panel is open and selection changed externally
+    let lastSig = '';
+    NC.store.on('change', () => {
+      /* auto-refresh the panel only when the selection actually changed
+         (keeps slider drags from being interrupted) */
+      const sel = NC.store.getSelected();
+      const sig = sel ? sel.kind + ':' + sel.item.id : 'none';
+      if (sig !== lastSig && panelEl && panelEl.classList.contains('open')) {
+        lastSig = sig;
+        openTool(NC.store.state.tool || 'edit');
+      }
+      lastSig = sig;
     });
     NC.store.on('langchange', refresh);
   }
