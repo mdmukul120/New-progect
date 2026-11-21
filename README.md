@@ -1,25 +1,15 @@
-# Hamyra — Fast, 100% Ad-Free Streaming & Download Web App
+# Mukul Plus (`mukul-plus08.vercel.app`)
 
-A high-performance, 100% ad-free Vercel deployment of Hamyra featuring instant playback, unlocked direct downloads, live sports, and 100+ live TV channels.
+Fast, responsive, 100% ad-free HD streaming & direct download web platform featuring a custom **Dual-Theme Design System**:
+- **Dark Theme (Default)**: Matte Obsidian Black (`#070905`) + Electric Lime (`#a3e635`)
+- **Light Theme**: Pure Crisp White (`#ffffff`) + Fresh Lime (`#65a30d` / `#84cc16`)
 
-## Key Enhancements Over Upstream
-
-1. **100% Ad-Free & Zero Popups**
-   - Permanently bypasses all `"Watch a quick ad to unlock this video / episode / channel / download"` overlays and 1-hour lock timers (`Af`, `mA`, `gA`, `Cf`, `T8`).
-   - Completely eliminates `effectivecpmnetwork.com` popup tabs (`pA`).
-   - Removes all inline banner ads across Home, Movies, Series, Sports, and Downloads (`CA` & banner ad components).
-   - Removes Adsterra Social Bar & sidebar iframe scripts (`dischargeconceiteffort.com` in `ads-*.js` and `cricket-*.js`).
-
-2. **Substantially Faster Load & Playback Startup**
-   - Eliminates the **4,000 ms Cloudflare Turnstile timeout bottleneck** (`V5` / `hw`) that otherwise stalls authenticated catalog & download resolution on custom/Vercel domains.
-   - Removes the **400 ms `debugger` polling loop** (`H3`), DevTools `window.fetch` wrapper (`AN`), and right-click/keyboard blockers (`a5`).
-   - Removes pageview and `__navguard` background telemetry (`u5`, `Gd`, `iN`).
-   - Replaces route-fragile SSR document hydration with a clean universal SPA client mount + `Cache-Control: public, max-age=31536000, immutable` on all hashed Vite chunks + DNS/TLS `preconnect` hints.
-
-3. **Full Feature Parity**
-   - Movies, Web Series, Bangla Natok, K-Drama, Anime, Multi-Server Picker, Subtitles, Dual-Audio tracks, Direct 480p/720p/1080p/4K Downloads, 100+ Live TV Channels, Live Cricket & Sports Scorecards, AI Movie Picks, Watch Party, Continue Watching, and My List.
-   - Edge proxy (`api/proxy.js`) seamlessly handles TanStack `_serverFn` RPCs and CORS headers with low-latency Vercel Edge caching.
-
-## Deployment
-
-Push to GitHub and deploy directly on Vercel (`npm run build` outputs static assets to `dist/` alongside Vercel Edge Functions in `api/proxy.js`).
+## Key Enhancements
+1. **Complete Rebrand to Mukul Plus**: Custom neon-lime `M+` brand identity, app icons, OpenGraph preview card, PWA manifest, header & footer.
+2. **Instant Dual-Theme Switcher**: Zero-FOUC `localStorage` persistence (`mukul_theme`) with one-tap Sun/Moon toggle in desktop header and mobile drawer.
+3. **Lag-Free Performance ("ল্যাক মুক্ত")**:
+   - Eliminated 30fps full-screen WebGL2 shader canvas loop & canvas `getImageData` readbacks.
+   - Disabled continuous hero Ken-Burns repaint zoom animations & added `content-visibility: auto` on off-screen rails.
+   - Removed Cloudflare Turnstile 4,000ms waits, anti-DevTools `debugger` loops, and all ad/popup/telemetry scripts.
+4. **Decluttered UI**: Stripped ads, floating feedback popups, app-install nags, social clutter, and bottom SEO filler blocks.
+5. **Serverless Edge Proxy**: Seamless `/_serverFn/*`, `/_edge/*`, and `/_apihamyra/*` Chrome-TLS proxy via `api/proxy.js`.

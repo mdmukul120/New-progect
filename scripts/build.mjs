@@ -14,22 +14,12 @@ const impitClient = new Impit({
 });
 
 const UPSTREAM_ORIGIN = 'https://www.hamyra.xyz';
+const PROD_ORIGIN = 'https://mukul-plus08.vercel.app';
 const SNAPSHOT_HTML_PATH = path.resolve(process.cwd(), 'upstream/index.html');
+const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
 const ASSETS_DIR = path.join(DIST_DIR, 'assets');
 const LOGOS_DIR = path.join(DIST_DIR, 'logos');
-
-const STATIC_ROOT_FILES = [
-  '/favicon.png',
-  '/hamyra-logo.jpg',
-  '/hamyra-logo.png',
-  '/hamyra-logo.webp',
-  '/hamyra-icon-512.png',
-  '/icon-android.png',
-  '/og-image.jpg',
-  '/site.webmanifest',
-  '/robots.txt',
-];
 
 const KNOWN_AD_DOMAINS = [
   'effectivecpmnetwork.com',
@@ -67,8 +57,8 @@ async function checkCorsNeed(testUrl) {
     const res = await impitClient.fetch(testUrl, {
       method: 'GET',
       headers: {
-        Origin: 'https://hamyra-adfree-fast.vercel.app',
-        Referer: 'https://hamyra-adfree-fast.vercel.app/',
+        Origin: PROD_ORIGIN,
+        Referer: `${PROD_ORIGIN}/`,
         Accept: 'application/json',
       },
     });
@@ -79,8 +69,8 @@ async function checkCorsNeed(testUrl) {
     }
     return false;
   } catch (err) {
-    console.warn(`[CORS Probe] Warning on ${testUrl}: ${err.message}`);
-    return false;
+    console.warn(`[CORS Probe] Warning on ${testUrl}: ${err.message} (defaulting to proxy=true)`);
+    return true;
   }
 }
 
@@ -121,12 +111,12 @@ function replaceFunctionBodyBySignature(code, sigRegex, newFnGenerator, label) {
       const replacementFn = newFnGenerator(match, originalFn, fnNode);
       const updated = code.slice(0, fnNode.start) + replacementFn + code.slice(fnNode.end);
       console.log(`  [patched] ${label} [${fnNode.id.name}] (${originalFn.length} -> ${replacementFn.length} chars)`);
-      return { code: updated, patched: true };
+      return { code: updated, patched: true, fnName: fnNode.id.name };
     }
   }
 
   console.warn(`  [patch-skip] Could not find FunctionDeclaration matching ${label}`);
-  return { code, patched: false };
+  return { code, patched: false, fnName: null };
 }
 
 function replaceHydrateRootWithCreateRoot(code) {
@@ -178,12 +168,80 @@ function replaceHydrateRootWithCreateRoot(code) {
   return code.slice(0, foundCall.start) + replacement + code.slice(foundCall.end);
 }
 
+/**
+ * Rebrand UI text & convert Cyan/Teal/Blue accents into Mukul Plus Electric Lime across JS chunks.
+ * Never touches API keys, storage keys (`hamyra:continue-watching`, `hamyra:my-list`), or proxy origins.
+ */
+function applyBrandAndLimeThemeToJs(rawCode) {
+  let code = rawCode;
+
+  // 1. Brand identity replacements (safe UI strings, titles, eyebrows, filenames)
+  code = code.replace(/Fresh · HamyraBD/g, 'Fresh · Mukul Plus');
+  code = code.replace(/Watch · HamyraBD/g, 'Watch · Mukul Plus');
+  code = code.replace(/Download · HamyraBD/g, 'Download · Mukul Plus');
+  code = code.replace(/HamyraBD/g, 'Mukul Plus');
+  code = code.replace(/https:\/\/www\.hamyra\.xyz\/og-image\.jpg/g, `${PROD_ORIGIN}/og-image.jpg`);
+  code = code.replace(/`https:\/\/www\.hamyra\.xyz\//g, `\`${PROD_ORIGIN}/`);
+  code = code.replace(/"https:\/\/www\.hamyra\.xyz\/(movies|series|live-tv|privacy|terms|sports|cricket|downloads|app)"/g, `"${PROD_ORIGIN}/$1"`);
+  code = code.replace(/const ([A-Za-z0-9_$]+)="https:\/\/www\.hamyra\.xyz",([A-Za-z0-9_$]+)="Hamyra"/g, `const $1="${PROD_ORIGIN}",$2="Mukul Plus"`);
+  code = code.replace(/\| Hamyra`/g, '| Mukul Plus`');
+  code = code.replace(/\| Hamyra"/g, '| Mukul Plus"');
+  code = code.replace(/— Hamyra`/g, '— Mukul Plus`');
+  code = code.replace(/— Hamyra"/g, '— Mukul Plus"');
+  code = code.replace(/Hamyra —/g, 'Mukul Plus —');
+  code = code.replace(/on Hamyra/g, 'on Mukul Plus');
+  code = code.replace(/Watch together on Hamyra/g, 'Watch together on Mukul Plus');
+  code = code.replace(/\["Hamyra",/g, '["MukulPlus",');
+  code = code.replace(/\/hamyra-logo\.(jpg|png|webp)/g, '/mukul-logo.$1');
+  code = code.replace(/\/hamyra-icon-512\.png/g, '/mukul-icon-512.png');
+  code = code.replace(/alt:"Hamyra"/g, 'alt:"Mukul Plus"');
+
+  // 2. Color & Accent replacements: Cyan / Teal -> Mukul Plus Electric Lime (#a3e635 / lime-*)
+  code = code.replace(/#22D3EE|#22d3ee|#2ad5e5/g, '#a3e635');
+  code = code.replace(/rgba\(34,\s*211,\s*238,/g, 'rgba(163,230,53,');
+  code = code.replace(/rgba\(45,\s*212,\s*191,/g, 'rgba(163,230,53,');
+  code = code.replace(/rgba\(59,\s*130,\s*246,/g, 'rgba(132,204,22,');
+  code = code.replace(/from-\[#0c3b3b\] via-\[#0a2029\] to-\[#0b1020\]/g, 'from-[#142409] via-[#0c1606] to-[#070905]');
+  code = code.replace(/bg-\[#07141a\]\/92/g, 'bg-[#070905]/92');
+  code = code.replace(/bg-\[#0b0f18\]/g, 'bg-[#0d1209]');
+  code = code.replace(/ring-\[#0b0e16\]/g, 'ring-[#070905]');
+
+  // Featured banner & button gradients -> crisp Lime + Black ink
+  code = code.replace(
+    /from-cyan-400 to-blue-500 text-white/g,
+    'from-[#bef264] to-[#84cc16] text-[#070b02]'
+  );
+  code = code.replace(
+    /from-cyan-400 to-blue-600 text-white/g,
+    'from-[#bef264] to-[#84cc16] text-[#070b02]'
+  );
+  code = code.replace(
+    /from-cyan-500 to-indigo-500/g,
+    'from-[#a3e635] to-[#65a30d]'
+  );
+  code = code.replace(
+    /from-emerald-400 to-cyan-500/g,
+    'from-[#bef264] to-[#84cc16]'
+  );
+  code = code.replace(/text-cyan-300|text-cyan-400/g, 'text-[#a3e635]');
+  code = code.replace(/bg-cyan-300|bg-cyan-400/g, 'bg-[#a3e635]');
+  code = code.replace(/bg-cyan-400\/20/g, 'bg-[#a3e635]/20');
+  code = code.replace(/bg-fuchsia-500\/20/g, 'bg-[#65a30d]/18');
+  code = code.replace(/border-cyan-500\/50/g, 'border-[#a3e635]/50');
+  code = code.replace(/rgba\(168,85,247,0\.22\)/g, 'rgba(101,163,13,0.18)');
+
+  return code;
+}
+
 function patchEntryChunk(rawCode) {
   let code = rawCode;
 
-  // Log the tail of entry chunk for full build visibility
-  console.log('[Entry Tail Preview (last 900 chars)]:');
-  console.log(code.slice(-900));
+  const jsxMatch = code.match(/([A-Za-z0-9_$]+)\.jsxs\("header"/);
+  const jsxIdent = jsxMatch ? jsxMatch[1] : 'g';
+
+  // Extract React namespace identifier (`k` in `k.useState(...)`)
+  const reactMatch = code.match(/function\s+[A-Za-z0-9_$]+\(\)\{const\[[A-Za-z0-9_$,]+\]=([A-Za-z0-9_$]+)\.useState\(!1\);return/);
+  const reactIdent = reactMatch ? reactMatch[1] : 'k';
 
   // 1. Unlock Af() & mA() & pA() (Ad-unlock state, 1-hour timer, popup tab)
   ({ code } = replaceFunctionBodyBySignature(
@@ -215,10 +273,7 @@ function patchEntryChunk(rawCode) {
     'AdUnlock modal Cf() -> instant unlock & null'
   ));
 
-  // 3. Video / Live-TV / Episode gate wrapper gA({children, label, fill}) -> render children directly!
-  const jsxMatch = code.match(/([A-Za-z0-9_$]+)\.jsxs\("header"/);
-  const jsxIdent = jsxMatch ? jsxMatch[1] : 'g';
-
+  // 3. Video / Live-TV / Episode gate wrapper gA({children, label, fill}) -> render children directly
   ({ code } = replaceFunctionBodyBySignature(
     code,
     /function\s+([A-Za-z0-9_$]+)\(\{children:([A-Za-z0-9_$]+),label:[A-Za-z0-9_$]+="content",fill:([A-Za-z0-9_$]+)=!1\}\)\{/,
@@ -227,7 +282,7 @@ function patchEntryChunk(rawCode) {
     'Stream/Video AdGate wrapper gA() -> direct children'
   ));
 
-  // 4. Download unlock context provider T8({children, label="download"}) -> always execute immediately!
+  // 4. Download unlock context provider T8({children, label="download"}) -> always execute immediately
   ({ code } = replaceFunctionBodyBySignature(
     code,
     /function\s+([A-Za-z0-9_$]+)\(\{children:([A-Za-z0-9_$]+),label:[A-Za-z0-9_$]+="download"\}\)\{/,
@@ -248,7 +303,6 @@ function patchEntryChunk(rawCode) {
     'Banner Ad HTML builder CA() -> empty string'
   ));
 
-  // Any component taking {adKey:...} in entry chunk -> return null
   ({ code } = replaceFunctionBodyBySignature(
     code,
     /function\s+([A-Za-z0-9_$]+)\(\{adKey:[^}]+\}\)\{/,
@@ -315,23 +369,182 @@ function patchEntryChunk(rawCode) {
     'Navguard global listeners iN() -> no-op'
   ));
 
-  // 9. Speed up splash screen fallback in kN shellComponent (900ms -> 150ms) and dispatch hide immediately on mount
+  // 9. ZERO-LAG OPTIMIZATION: Kill WebGL2 30fps full-screen shader canvas U3() and hero pixel-readback z3()
+  ({ code } = replaceFunctionBodyBySignature(
+    code,
+    /function\s+([A-Za-z0-9_$]+)\(\)\{const [A-Za-z0-9_$]+=[A-Za-z0-9_$]+\.useRef\(null\),[A-Za-z0-9_$]+=[A-Za-z0-9_$]+\(\{select:[A-Za-z0-9_$]+=>[A-Za-z0-9_$]+\.location\.pathname\.startsWith\("\/watch"\)/,
+    (m) => `function ${m[1]}(){return null}`,
+    'Zero-Lag: WebGL2 30fps full-screen shader loop U3() -> null'
+  ));
+
+  ({ code } = replaceFunctionBodyBySignature(
+    code,
+    /function\s+([A-Za-z0-9_$]+)\([A-Za-z0-9_$]+\)\{return new Promise\([A-Za-z0-9_$]+=>\{if\(typeof document>"u"\|\|![A-Za-z0-9_$]+\)return [A-Za-z0-9_$]+\([A-Za-z0-9_$]+\);const [A-Za-z0-9_$]+=new Image;/,
+    (m) => `function ${m[1]}(){return Promise.resolve([.64,.9,.21])}`,
+    'Zero-Lag: Hero canvas getImageData pixel readback z3() -> instant lime tint'
+  ));
+
+  // 10. DECLUTTER: Remove floating Feedback popup button F3() and SEO filler component NA({heading, paragraphs})
+  ({ code } = replaceFunctionBodyBySignature(
+    code,
+    /function\s+([A-Za-z0-9_$]+)\(\)\{const\[[A-Za-z0-9_$,]+\]=[A-Za-z0-9_$]+\.useState\(!1\);return [A-Za-z0-9_$]+\.jsxs\([A-Za-z0-9_$]+\.Fragment,\{children:\[[A-Za-z0-9_$]+\.jsxs\("button",\{onClick:\(\)=>[A-Za-z0-9_$]+\(!0\),"aria-label":"Send feedback"/,
+    (m) => `function ${m[1]}(){return null}`,
+    'Declutter: Floating Feedback button & modal F3() -> null'
+  ));
+
+  ({ code } = replaceFunctionBodyBySignature(
+    code,
+    /function\s+([A-Za-z0-9_$]+)\(\{heading:[A-Za-z0-9_$]+,paragraphs:[A-Za-z0-9_$]+\}\)\{return [A-Za-z0-9_$]+\.jsx\("section",\{className:"mx-auto max-w-\[1400px\] px-4 pb-14 pt-4/,
+    (m) => `function ${m[1]}(){return null}`,
+    'Declutter: Bottom SEO text filler block NA() -> null'
+  ));
+
+  // 11. REDESIGN HEADER kA() — Mukul Plus branding + Lime/White Theme Switcher + remove "Get App" & "AI Picks" clutter
+  ({ code } = replaceFunctionBodyBySignature(
+    code,
+    /function\s+([A-Za-z0-9_$]+)\(\{pinned:([A-Za-z0-9_$]+)=!0\}=\{\}\)\{/,
+    (m, orig) => {
+      const fnName = m[1];
+      // Extract identifiers used inside original kA() so everything stays 100% bound to the exact bundle symbols
+      const locHookM = orig.match(/([A-Za-z0-9_$]+)\(\{select:[A-Za-z0-9_$]+=>[A-Za-z0-9_$]+\.location\.pathname\}\)/);
+      const linkCompM = orig.match(/\[([A-Za-z0-9_$]+)\.jsxs\(([A-Za-z0-9_$]+),\{to:"\/"/);
+      const navArrM = orig.match(/([A-Za-z0-9_$]+)\.map\([A-Za-z0-9_$]+=>\{const [A-Za-z0-9_$]+=[A-Za-z0-9_$]+===[A-Za-z0-9_$]+\.matchPath/);
+      const searchIconM = orig.match(/aria-label":"Search"[\s\S]{0,180}?children:[A-Za-z0-9_$]+\.jsx\(([A-Za-z0-9_$]+),/);
+      const menuIconM = orig.match(/aria-label":"Open menu"[\s\S]{0,180}?children:[A-Za-z0-9_$]+\.jsx\(([A-Za-z0-9_$]+),/);
+      const closeIconM = orig.match(/aria-label":"Close menu"[\s\S]{0,180}?children:[A-Za-z0-9_$]+\.jsx\(([A-Za-z0-9_$]+),/);
+
+      if (!locHookM || !linkCompM || !navArrM || !searchIconM || !menuIconM || !closeIconM) {
+        console.warn('  [warn] Could not extract all inner identifiers of kA(), keeping original header');
+        return orig;
+      }
+
+      const locHook = locHookM[1];
+      const LinkComp = linkCompM[2];
+      const navArr = navArrM[1];
+      const SearchIcon = searchIconM[1];
+      const MenuIcon = menuIconM[1];
+      const CloseIcon = closeIconM[1];
+
+      // Inline crisp SVG Sun & Moon icons so zero external icon dependency is needed
+      const sunSvg = `${jsxIdent}.jsxs("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round",className:"h-4 w-4",children:[${jsxIdent}.jsx("circle",{cx:"12",cy:"12",r:"4"}),${jsxIdent}.jsx("path",{d:"M12 2v2M12 20v2m-7.07-14.07 1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"})]})`;
+      const moonSvg = `${jsxIdent}.jsx("svg",{viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round",className:"h-4 w-4",children:${jsxIdent}.jsx("path",{d:"M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"})})`;
+
+      return `function ${fnName}({pinned:t=!0}={}){` +
+        `const[a,i]=${reactIdent}.useState(!1),[s,l]=${reactIdent}.useState(!1),` +
+        `[_th,_setTh]=${reactIdent}.useState(()=>typeof document<"u"&&document.documentElement.classList.contains("light")?"light":"dark"),` +
+        `u=${locHook}({select:d=>d.location.pathname}),` +
+        `_nav=${navArr}.filter(d=>d.to!=="/ai-recommendation"&&d.to!=="/app"),` +
+        `_toggle=()=>{const n=_th==="dark"?"light":"dark";_setTh(n);if(typeof window<"u"&&window.__setMukulTheme)window.__setMukulTheme(n);};` +
+        `${reactIdent}.useEffect(()=>{i(!1)},[u]);` +
+        `${reactIdent}.useEffect(()=>{const d=()=>l(window.scrollY>8);return d(),window.addEventListener("scroll",d,{passive:!0}),()=>window.removeEventListener("scroll",d)},[]);` +
+        `${reactIdent}.useEffect(()=>{const h=e=>{if(e?.detail)_setTh(e.detail)};return window.addEventListener("mukul-theme-change",h),()=>window.removeEventListener("mukul-theme-change",h)},[]);` +
+        `${reactIdent}.useEffect(()=>{if(!a){document.body.style.overflow="";return}return document.body.style.overflow="hidden",()=>{document.body.style.overflow=""}},[a]);` +
+        `return ${jsxIdent}.jsxs("header",{className:\`\${t?"sticky":"relative"} top-0 z-50\`,children:[` +
+          `${jsxIdent}.jsx("div",{className:\`transition-colors duration-200 border-b \${s?"bg-[#070905]/92 backdrop-blur-md border-[#a3e635]/15 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.65)]":"bg-transparent border-transparent"}\`,children:` +
+            `${jsxIdent}.jsxs("div",{className:"flex h-16 sm:h-18 items-center justify-between px-4 sm:px-6 lg:px-[50px]",children:[` +
+              `${jsxIdent}.jsxs(${LinkComp},{to:"/",className:"flex items-center gap-2.5 shrink-0 group",children:[` +
+                `${jsxIdent}.jsx("img",{src:"/mukul-logo.jpg",alt:"Mukul Plus",className:"h-9 w-9 sm:h-10 sm:w-10 rounded-xl shadow-[var(--shadow-glow)] object-cover ring-1 ring-[#a3e635]/30 transition group-hover:ring-[#a3e635]/70"}),` +
+                `${jsxIdent}.jsxs("span",{className:"mukul-brand-title font-display text-lg sm:text-2xl font-black uppercase tracking-tight text-white flex items-center gap-1.5",style:{letterSpacing:"-0.03em"},children:["Mukul",${jsxIdent}.jsx("span",{className:"mukul-plus-pill",children:"PLUS"})]})` +
+              `]}),` +
+              `${jsxIdent}.jsx("nav",{className:"hidden xl:flex shrink-0 items-center gap-1",children:_nav.map(d=>{const h=d.matchPath==="/"?u==="/":u===d.matchPath||u.startsWith(d.matchPath+"/");return ${jsxIdent}.jsxs(${LinkComp},{to:d.to,params:"params"in d?d.params:void 0,className:\`relative whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition \${h?"text-[#a3e635]":"text-muted-foreground hover:text-white"}\`,children:[d.label,h&&${jsxIdent}.jsx("span",{className:"absolute inset-x-3 -bottom-0.5 h-0.5 rounded-full bg-[#a3e635] shadow-[0_0_10px_rgba(163,230,53,0.75)]"})]},d.label)})}),` +
+              `${jsxIdent}.jsxs("div",{className:"flex items-center gap-2",children:[` +
+                `${jsxIdent}.jsxs("button",{type:"button",onClick:_toggle,"aria-label":_th==="dark"?"Switch to Light Theme":"Switch to Dark Theme",title:_th==="dark"?"Light Theme (White & Lime)":"Dark Theme (Lime & Black)",className:"mukul-theme-btn",children:[_th==="dark"?${sunSvg}:${moonSvg},${jsxIdent}.jsx("span",{className:"hidden sm:inline",children:_th==="dark"?"Light":"Dark"})]}),` +
+                `${jsxIdent}.jsx(${LinkComp},{to:"/search","aria-label":"Search",search:{q:void 0},className:"grid h-10 w-10 place-items-center rounded-full text-white/85 transition hover:bg-[#a3e635]/10 hover:text-[#a3e635]",children:${jsxIdent}.jsx(${SearchIcon},{className:"h-5 w-5"})}),` +
+                `${jsxIdent}.jsx("button",{onClick:()=>i(!0),"aria-label":"Open menu",className:"xl:hidden grid h-10 w-10 place-items-center rounded-full text-white/85 transition hover:text-[#a3e635]",children:${jsxIdent}.jsx(${MenuIcon},{className:"h-6 w-6"})})` +
+              `]})` +
+            `]})` +
+          `}),` +
+          `a&&${jsxIdent}.jsxs(${jsxIdent}.Fragment,{children:[` +
+            `${jsxIdent}.jsx("div",{className:"fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm xl:hidden",onClick:()=>i(!1)}),` +
+            `${jsxIdent}.jsxs("div",{className:"fixed top-0 left-0 z-[100] h-screen w-[86vw] max-w-[340px] bg-[#0a0e07]/96 backdrop-blur-xl border-r border-[#a3e635]/15 shadow-2xl xl:hidden",children:[` +
+              `${jsxIdent}.jsxs("div",{className:"flex h-16 items-center justify-between px-4 border-b border-[#a3e635]/15",children:[` +
+                `${jsxIdent}.jsxs("div",{className:"flex items-center gap-2",children:[` +
+                  `${jsxIdent}.jsx("img",{src:"/mukul-logo.jpg",alt:"Mukul Plus",className:"h-8 w-8 rounded-lg object-cover ring-1 ring-[#a3e635]/30"}),` +
+                  `${jsxIdent}.jsxs("span",{className:"mukul-brand-title font-black text-lg tracking-tight text-white flex items-center gap-1.5",children:["MUKUL",${jsxIdent}.jsx("span",{className:"mukul-plus-pill",children:"PLUS"})]})` +
+                `]}),` +
+                `${jsxIdent}.jsx("button",{onClick:()=>i(!1),"aria-label":"Close menu",className:"grid h-9 w-9 place-items-center rounded-full glass",children:${jsxIdent}.jsx(${CloseIcon},{className:"h-5 w-5"})})` +
+              `]}),` +
+              `${jsxIdent}.jsxs("div",{className:"h-[calc(100vh-64px)] overflow-y-auto p-4 space-y-3",children:[` +
+                `${jsxIdent}.jsxs("button",{type:"button",onClick:_toggle,className:"w-full flex items-center justify-between rounded-2xl px-4 py-3.5 text-xs font-bold uppercase tracking-wider border border-[#a3e635]/30 bg-[#a3e635]/12 text-[#a3e635]",children:[${jsxIdent}.jsxs("span",{className:"flex items-center gap-2",children:[_th==="dark"?${sunSvg}:${moonSvg},_th==="dark"?"Switch to White & Lime":"Switch to Black & Lime"]}),${jsxIdent}.jsx("span",{className:"rounded-full bg-[#a3e635] px-2 py-0.5 text-[10px] font-black text-[#070b02]",children:_th==="dark"?"DARK":"LIGHT"})]}),` +
+                `${jsxIdent}.jsx("nav",{className:"space-y-2",children:_nav.map(d=>{const h=d.matchPath==="/"?u==="/":u===d.matchPath||u.startsWith(d.matchPath+"/");return ${jsxIdent}.jsx(${LinkComp},{to:d.to,params:"params"in d?d.params:void 0,className:\`flex items-center rounded-2xl px-4 py-3.5 text-xs font-bold uppercase tracking-wide transition \${h?"bg-[#a3e635] text-[#070b02]":"glass hover:bg-[#a3e635]/12"}\`,children:d.label},d.label)})})` +
+              `]})` +
+            `]})` +
+          `]})` +
+        `]})} `;
+    },
+    'Redesigned Header kA() -> Mukul Plus + Dual-Theme Switcher + Decluttered Nav'
+  ));
+
+  // 12. REDESIGN FOOTER e5() — Clean Mukul Plus footer without @hamyrabd social links or Get App bloat
+  ({ code } = replaceFunctionBodyBySignature(
+    code,
+    /function\s+([A-Za-z0-9_$]+)\(\)\{return [A-Za-z0-9_$]+\.jsxs\("footer",\{className:"mt-16 border-t/,
+    (m) => {
+      return `function ${m[1]}(){const _cols=[` +
+        `{title:"Watch",links:[{label:"Movies",href:"/movies"},{label:"Web Series",href:"/series"},{label:"Bangla Natok",href:"/category/drama"},{label:"Live TV",href:"/live-tv"}]},` +
+        `{title:"Sports & Downloads",links:[{label:"Live Sports",href:"/sports"},{label:"Live Cricket",href:"/cricket"},{label:"Direct Downloads",href:"/downloads"}]},` +
+        `{title:"Popular Platforms",links:[{label:"Chorki",href:"/provider/chorki"},{label:"Hoichoi",href:"/provider/hoichoi"},{label:"Netflix",href:"/provider/8"},{label:"Disney+",href:"/provider/337"}]},` +
+        `{title:"Mukul Plus",links:[{label:"Home",href:"/"},{label:"Search Catalog",href:"/search"},{label:"Privacy",href:"/privacy"},{label:"Terms",href:"/terms"}]}` +
+      `];return ${jsxIdent}.jsxs("footer",{className:"mt-14 border-t border-border bg-surface/60",children:[` +
+        `${jsxIdent}.jsxs("div",{className:"mx-auto grid max-w-[1400px] gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.5fr_repeat(4,1fr)] lg:px-10",children:[` +
+          `${jsxIdent}.jsxs("div",{children:[` +
+            `${jsxIdent}.jsxs("a",{href:"/",className:"inline-flex items-center gap-2.5",children:[` +
+              `${jsxIdent}.jsx("img",{src:"/mukul-logo.jpg",alt:"Mukul Plus",className:"h-9 w-9 rounded-xl object-cover ring-1 ring-[#a3e635]/30"}),` +
+              `${jsxIdent}.jsxs("span",{className:"mukul-brand-title font-display text-xl font-black uppercase tracking-tight text-foreground flex items-center gap-1.5",children:["Mukul",${jsxIdent}.jsx("span",{className:"mukul-plus-pill",children:"PLUS"})]})` +
+            `]}),` +
+            `${jsxIdent}.jsx("p",{className:"mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground",children:"Fast, lag-free HD movies, Bangla natok, web series, K-Drama, anime, live sports & 100+ TV channels — zero ads, instant playback."})` +
+          `]}),` +
+          `_cols.map(t=>${jsxIdent}.jsxs("nav",{"aria-label":t.title,children:[` +
+            `${jsxIdent}.jsx("div",{className:"text-xs font-bold uppercase tracking-widest text-neon",children:t.title}),` +
+            `${jsxIdent}.jsx("ul",{className:"mt-3 space-y-2 text-sm",children:t.links.map(a=>${jsxIdent}.jsx("li",{children:${jsxIdent}.jsx("a",{href:a.href,className:"text-foreground/80 transition hover:text-neon",children:a.label})},a.href))})` +
+          `]},t.title))` +
+        `]}),` +
+        `${jsxIdent}.jsx("div",{className:"border-t border-border",children:${jsxIdent}.jsxs("div",{className:"mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-4 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10",children:[` +
+          `${jsxIdent}.jsxs("span",{children:["© ",new Date().getFullYear()," Mukul Plus. Built for smooth HD streaming."]}),` +
+          `${jsxIdent}.jsx("span",{children:"Mukul Plus indexes publicly available streams and hosts no media files."})` +
+        `]})})` +
+      `]})}`;
+    },
+    'Redesigned Clean Footer e5() -> Mukul Plus'
+  ));
+
+  // 13. Update Live TV watermark badge ("Hamyra" -> "Mukul+") and remove unneeded streambd-proxy heartbeat ping
+  code = code.replace(
+    /children:"Hamyra"\}\)\]\}\)\}\)\(\)\]\}/g,
+    'children:"Mukul+"})]})})()]}'
+  );
+  code = code.replace(
+    /fetch\("https:\/\/streambd-proxy\.aininjaibrahim\.workers\.dev\/\?ping=1"\)\.catch\(\(\)=>\{\}\)/g,
+    'void 0'
+  );
+
+  // 14. Mobile bottom navigation active pill -> Electric Lime + Black ink
+  code = code.replace(
+    /bg-white\/20 text-white":"text-white\/55 hover:bg-white\/5 hover:text-white"/g,
+    'bg-[#a3e635] text-[#070b02] shadow-[0_0_16px_rgba(163,230,53,0.45)]":"text-white/65 hover:bg-white/10 hover:text-white"'
+  );
+  code = code.replace(
+    /bg-\[#0e0e10\]\/45/g,
+    'bg-[#0a0e07]/90'
+  );
+
+  // 15. Hero primary Play button -> Signature Lime CTA
+  code = code.replace(
+    /rounded-full bg-white text-black px-7 sm:px-8 py-3 sm:py-3\.5 text-sm sm:text-base font-black shadow-\[0_10px_30px_-8px_rgba\(255,255,255,0\.45\)\]/g,
+    'rounded-full bg-[#a3e635] text-[#070b02] px-7 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-black shadow-[0_10px_30px_-8px_rgba(163,230,53,0.55)]'
+  );
+
+  // 16. Speed up splash screen fallback
   code = code.replace(/setTimeout\(kill,\s*900\)/g, 'setTimeout(kill,120)');
 
-  // 10. Scrub hardcoded ad URLs as defense-in-depth
-  code = code.replace(
-    /https:\/\/www\.effectivecpmnetwork\.com\/[^\s"'`]+/g,
-    'about:blank'
-  );
-  code = code.replace(
-    /https:\/\/dischargeconceiteffort\.com\/[^\s"'`]+/g,
-    'about:blank'
-  );
+  // 17. Scrub hardcoded ad URLs
+  code = code.replace(/https:\/\/www\.effectivecpmnetwork\.com\/[^\s"'`]+/g, 'about:blank');
+  code = code.replace(/https:\/\/dischargeconceiteffort\.com\/[^\s"'`]+/g, 'about:blank');
 
-  // 11. Universal SPA client mount on #app (zero SSR hydration mismatch on ANY route!)
-  // Replace kN({children:t}) shellComponent (which previously rendered <html><head><body>) with a Fragment
-  // rendering HeadContent (sk) + children inside <div id="app"></div> (React 19 hoists <title>/<meta>/<link> to <head>!)
-  const headContentMatch = code.match(/function\s+[A-Za-z0-9_$]+\(\{children:[A-Za-z0-9_$]+\}\)\{return\s+[A-Za-z0-9_$]+\.jsxs\("html",\{[^}]*children:\[[A-Za-z0-9_$]+\.jsxs\("head",\{children:\[[A-Za-z0-9_$]+\.jsx\(([A-Za-z0-9_$]+),\{\}\)/);
+  // 18. Universal SPA client mount on #app
+  const headContentMatch = code.match(
+    /function\s+[A-Za-z0-9_$]+\(\{children:[A-Za-z0-9_$]+\}\)\{return\s+[A-Za-z0-9_$]+\.jsxs\("html",\{[^}]*children:\[[A-Za-z0-9_$]+\.jsxs\("head",\{children:\[[A-Za-z0-9_$]+\.jsx\(([A-Za-z0-9_$]+),\{\}\)/
+  );
   const headCompIdent = headContentMatch ? headContentMatch[1] : null;
 
   ({ code } = replaceFunctionBodyBySignature(
@@ -346,22 +559,23 @@ function patchEntryChunk(rawCode) {
     'Root shellComponent kN() -> SPA Fragment with React 19 HeadContent'
   ));
 
-  // Make Z2(router) seamlessly support pure SPA client boot when !window.$_TSR:
   ({ code } = replaceFunctionBodyBySignature(
     code,
     /async function\s+([A-Za-z0-9_$]+)\(([A-Za-z0-9_$]+)\)\{const ([A-Za-z0-9_$]+)=window\.\$_TSR,/,
     (m, orig) => {
       const fnName = m[1];
       const routerVar = m[2];
-      const guard = `if(!window.$_TSR){await ${routerVar}.load();const _sp=document.getElementById("hamyra-splash");if(_sp){_sp.style.opacity="0";_sp.style.pointerEvents="none";setTimeout(()=>{_sp.style.display="none"},220)}return ${routerVar}}`;
+      const guard = `if(!window.$_TSR){await ${routerVar}.load();const _sp=document.getElementById("mukul-splash");if(_sp){_sp.style.opacity="0";_sp.style.pointerEvents="none";setTimeout(()=>{_sp.style.display="none"},180)}return ${routerVar}}`;
       const bracePos = orig.indexOf('{');
       return `async function ${fnName}(${routerVar}){${guard}${orig.slice(bracePos + 1)}`;
     },
     'Universal SPA boot guard in Z2(router) when !window.$_TSR'
   ));
 
-  // Switch hydrateRoot(document, ...) -> createRoot(document.getElementById("app") || document.body).render(...)
   code = replaceHydrateRootWithCreateRoot(code);
+
+  // Apply global Mukul Plus brand + Lime theme palette
+  code = applyBrandAndLimeThemeToJs(code);
 
   return code;
 }
@@ -372,14 +586,12 @@ function patchSubChunk(filename, rawCode) {
 
   // 1. Patch ads-*.js completely (Adsterra Social Bar + ad keys)
   if (/^ads-[A-Za-z0-9_-]+\.js$/.test(filename)) {
-    // Keep exact export names, replace keys with empty strings and social bar injector with no-op!
     const exportMatch = code.match(/export\{([^}]+)\}/);
     if (exportMatch) {
       const specs = exportMatch[1].split(',').map((s) => s.trim());
       const decls = [];
       const outSpecs = [];
       specs.forEach((spec, idx) => {
-        // e.g. "s as A" or "o as i" or "A"
         const parts = spec.split(/\s+as\s+/);
         const exportedName = (parts[1] || parts[0]).trim();
         const localName = `_adStub${idx}`;
@@ -393,10 +605,31 @@ function patchSubChunk(filename, rawCode) {
       code = `${decls.join(';')};export{${outSpecs.join(',')}};\n`;
       modified = true;
       console.log(`  [patched] Neutralized Adsterra Social Bar & keys in ${filename}`);
+      return { code, modified };
     }
   }
 
-  // 2. Patch cricket-*.js local Adsterra iframe component I({adKey:...}) and sidebar ad z()
+  // 2. Patch homepage chunk (`index-*.js` other than entry) -> remove "About Hamyra" & "Frequently Asked Questions" clutter
+  if (/^index-[A-Za-z0-9_-]+\.js$/.test(filename) && code.includes('Frequently Asked Questions')) {
+    const beforeLen = code.length;
+    code = code.replace(
+      /,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"About [^"]*?"\)[^]*?\}\)\]\}\)\s*,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"Frequently Asked Questions"[^]*?\}\)\]\}\)/,
+      ''
+    );
+    if (code.length !== beforeLen) {
+      modified = true;
+      console.log(`  [patched] Decluttered Homepage "About" & "FAQ" filler sections in ${filename}`);
+    }
+  }
+
+  // 3. Patch MlbdRail-*.js red eyebrow -> lime neon eyebrow
+  if (/^MlbdRail-[A-Za-z0-9_-]+\.js$/.test(filename)) {
+    code = code.replace(/text-red-400/g, 'text-neon');
+    code = code.replace(/bg-red-500/g, 'bg-neon');
+    modified = true;
+  }
+
+  // 4. Patch cricket-*.js local Adsterra iframe component & sidebar ad box
   if (/^cricket-[A-Za-z0-9_-]+\.js$/.test(filename)) {
     const r1 = replaceFunctionBodyBySignature(
       code,
@@ -420,7 +653,7 @@ function patchSubChunk(filename, rawCode) {
     }
   }
 
-  // 3. Any other chunk containing dischargeconceiteffort.com or effectivecpmnetwork.com
+  // 5. Scrub residual ad domains in any chunk
   for (const domain of KNOWN_AD_DOMAINS) {
     if (code.includes(domain)) {
       const r = replaceFunctionBodyBySignature(
@@ -430,27 +663,47 @@ function patchSubChunk(filename, rawCode) {
         `${filename}: adKey component -> null`
       );
       code = r.code;
-      code = code.replace(new RegExp(`https?:\\/\\/(?:www\\.)?${domain.replace('.', '\\.')}[^"'\\s\`]*`, 'g'), 'about:blank');
+      code = code.replace(
+        new RegExp(`https?:\\/\\/(?:www\\.)?${domain.replace('.', '\\.')}[^"'\\s\`]*`, 'g'),
+        'about:blank'
+      );
       modified = true;
       console.log(`  [patched] Scrubbed ${domain} from ${filename}`);
     }
   }
 
+  // 6. Apply Mukul Plus brand & Lime palette across every sub-chunk
+  const branded = applyBrandAndLimeThemeToJs(code);
+  if (branded !== code) {
+    code = branded;
+    modified = true;
+  }
+
   return { code, modified };
+}
+
+function patchStylesheet(rawCss, mukulThemeCss) {
+  let css = rawCss;
+  // Replace hardcoded cyan/teal hexes & glows in upstream Tailwind CSS with Electric Lime
+  css = css.replace(/#2ad5e5|#22d3ee|#06b6d4/gi, '#a3e635');
+  css = css.replace(/rgba\(42,\s*213,\s*229,/g, 'rgba(163,230,53,');
+  css = css.replace(/rgba\(34,\s*211,\s*238,/g, 'rgba(163,230,53,');
+  css = css.replace(/rgba\(56,\s*189,\s*248,/g, 'rgba(132,204,22,');
+  // Append Mukul Plus Dual-Theme (Dark Lime/Black + Light White/Lime) & Zero-Lag rules at the end of CSS
+  return `${css}\n\n${mukulThemeCss}\n`;
 }
 
 function discoverAssetReferences(content) {
   const foundAssets = new Set();
   const foundLogos = new Set();
 
-  // Match "assets/foo-bar.js" or "/assets/foo-bar.css" or "./foo-bar.js"
-  const assetRe1 = /(?:\/?assets\/|\bimport\s*\(\s*["']\.\/|\bfrom\s*["']\.\/)([A-Za-z0-9_.-]+\.(?:js|css|wasm|json|svg|png|webp|woff2?))/g;
+  const assetRe1 =
+    /(?:\/?assets\/|\bimport\s*\(\s*["']\.\/|\bfrom\s*["']\.\/)([A-Za-z0-9_.-]+\.(?:js|css|wasm|json|svg|png|webp|woff2?))/g;
   let m;
   while ((m = assetRe1.exec(content)) !== null) {
     foundAssets.add(m[1]);
   }
 
-  // Also match plain "./ChunkName-hash.js" strings inside __vite__mapDeps or dynamic imports
   const assetRe2 = /["']\.\/([A-Za-z0-9_.-]+\.(?:js|css))["']/g;
   while ((m = assetRe2.exec(content)) !== null) {
     foundAssets.add(m[1]);
@@ -461,7 +714,6 @@ function discoverAssetReferences(content) {
     foundAssets.add(m[1]);
   }
 
-  // Match "/logos/*.png" or "/logos/*.svg" or "/logos/*.webp"
   const logoRe = /["']\/logos\/([A-Za-z0-9_.-]+\.(?:png|jpg|jpeg|webp|svg))["']/g;
   while ((m = logoRe.exec(content)) !== null) {
     foundLogos.add(m[1]);
@@ -476,7 +728,7 @@ async function validateJsSyntax(filePath) {
 
 function buildCleanIndexHtml({ entryJs, entryCss, preloadChunks }) {
   const preloadTags = preloadChunks
-    .slice(0, 12)
+    .slice(0, 10)
     .map((chunk) => `  <link rel="modulepreload" href="/assets/${chunk}" />`)
     .join('\n');
 
@@ -485,91 +737,50 @@ function buildCleanIndexHtml({ entryJs, entryCss, preloadChunks }) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Hamyra — Watch Movies, Bangla Natok, Web Series &amp; Live TV Free (Ad-Free HD)</title>
-  <meta name="description" content="Stream and download free HD movies, Bangla natok, K-drama, web series, anime, live cricket &amp; 100+ TV channels instantly — 100% ad-free, zero popups, no signup." />
-  <meta name="theme-color" content="#070b16" />
-  <meta name="application-name" content="Hamyra" />
-  <meta name="apple-mobile-web-app-title" content="Hamyra" />
+  <title>Mukul Plus — Watch Free HD Movies, Bangla Natok, Web Series &amp; Live TV</title>
+  <meta name="description" content="Stream and download free HD movies, Bangla natok, K-drama, web series, anime, live cricket &amp; 100+ TV channels on Mukul Plus — responsive, lag-free, zero ads." />
+  <meta id="mukul-theme-meta" name="theme-color" content="#070905" />
+  <meta name="application-name" content="Mukul Plus" />
+  <meta name="apple-mobile-web-app-title" content="Mukul Plus" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta property="og:site_name" content="Hamyra" />
+  <meta property="og:site_name" content="Mukul Plus" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Hamyra — Fast Ad-Free Movies, Web Series, Live TV &amp; Downloads" />
-  <meta property="og:description" content="Free HD streaming &amp; direct downloads — movies, Bangla natok, K-Drama, web series, anime, live cricket and 100+ TV channels. Zero ads, zero popups." />
-  <meta property="og:image" content="/og-image.jpg" />
+  <meta property="og:url" content="${PROD_ORIGIN}" />
+  <meta property="og:title" content="Mukul Plus — Fast HD Movies, Web Series, Live TV &amp; Downloads" />
+  <meta property="og:description" content="Lag-free HD streaming &amp; direct downloads — movies, Bangla natok, K-Drama, web series, anime, live sports and 100+ TV channels on Mukul Plus." />
+  <meta property="og:image" content="${PROD_ORIGIN}/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Mukul Plus — Free HD Streaming &amp; Downloads" />
+  <meta name="twitter:image" content="${PROD_ORIGIN}/og-image.jpg" />
 
-  <!-- High-Speed DNS & TLS Preconnects -->
-  <link rel="preconnect" href="https://edge.hamyra.xyz" crossorigin />
-  <link rel="preconnect" href="https://api.hamyra.xyz" crossorigin />
-  <link rel="preconnect" href="https://api.themoviedb.org" crossorigin />
-  <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="dns-prefetch" href="https://cmos.raphsm4.dev" />
-  <link rel="dns-prefetch" href="https://stela.raphsm4.dev" />
-  <link rel="dns-prefetch" href="https://px.talkoraai.com" />
-  <link rel="dns-prefetch" href="https://streambd-proxy.aininjaibrahim.workers.dev" />
-
-  <link rel="icon" type="image/png" href="/favicon.png" sizes="any" />
-  <link rel="icon" type="image/webp" href="/hamyra-logo.webp" sizes="any" />
-  <link rel="apple-touch-icon" sizes="512x512" href="/hamyra-icon-512.png" />
-  <link rel="manifest" href="/site.webmanifest" />
-
-  <link rel="preload" as="image" href="/hamyra-logo.jpg" />
-  <link rel="stylesheet" href="/assets/${entryCss}" data-precedence="default" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" data-precedence="default" />
-  <link rel="modulepreload" href="/assets/${entryJs}" />
-${preloadTags}
-
-  <style>
-    html, body {
-      background-color: #070b16;
-      color: #f8fafc;
-    }
-    /* Instant ad-slot suppression & layout cleanup */
-    [id^="container-f8f096"],
-    [class*="container-f8f096"],
-    iframe[src*="effectivecpmnetwork"],
-    iframe[src*="dischargeconceiteffort"],
-    #cf-turnstile-host {
-      display: none !important;
-      width: 0 !important;
-      height: 0 !important;
-      pointer-events: none !important;
-    }
-    #hamyra-splash {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      background: #070b16;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 14px;
-      transition: opacity 0.2s ease-out;
-    }
-    #hamyra-splash.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-    #hamyra-splash img {
-      width: 84px;
-      height: 84px;
-      border-radius: 22px;
-      box-shadow: 0 0 38px -6px rgba(34, 211, 238, 0.6);
-    }
-    #hamyra-splash .brand {
-      font-family: 'Space Grotesk', system-ui, sans-serif;
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      font-size: 26px;
-      color: #fff;
-    }
-  </style>
+  <!-- Instant No-FOUC Dual Theme Boot (Dark: Lime & Black | Light: White & Lime) -->
   <script>
-    // Pre-seed permanent ad-free unlock timestamp & block unsolicited ad popups
     (function () {
+      function applyTheme(mode) {
+        var root = document.documentElement;
+        var isLight = mode === 'light';
+        root.classList.toggle('light', isLight);
+        root.classList.toggle('dark', !isLight);
+        root.dataset.theme = isLight ? 'light' : 'dark';
+        var meta = document.getElementById('mukul-theme-meta');
+        if (meta) meta.setAttribute('content', isLight ? '#ffffff' : '#070905');
+      }
+      var saved = 'dark';
+      try {
+        saved = localStorage.getItem('mukul_theme') || 'dark';
+      } catch (e) {}
+      applyTheme(saved);
+      window.__setMukulTheme = function (next) {
+        var mode = next === 'light' ? 'light' : 'dark';
+        try {
+          localStorage.setItem('mukul_theme', mode);
+        } catch (e) {}
+        applyTheme(mode);
+        try {
+          window.dispatchEvent(new CustomEvent('mukul-theme-change', { detail: mode }));
+        } catch (e) {}
+      };
       try {
         localStorage.setItem('hamyra_ad_unlock_at', String(Date.now() + 315360000000));
       } catch (e) {}
@@ -589,24 +800,108 @@ ${preloadTags}
       }
     })();
   </script>
+
+  <!-- High-Speed DNS & TLS Preconnects -->
+  <link rel="preconnect" href="https://api.themoviedb.org" crossorigin />
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://edge.hamyra.xyz" />
+  <link rel="dns-prefetch" href="https://cmos.raphsm4.dev" />
+  <link rel="dns-prefetch" href="https://stela.raphsm4.dev" />
+  <link rel="dns-prefetch" href="https://px.talkoraai.com" />
+
+  <link rel="icon" type="image/png" href="/favicon.png" sizes="any" />
+  <link rel="icon" type="image/webp" href="/mukul-logo.webp" sizes="any" />
+  <link rel="apple-touch-icon" sizes="512x512" href="/mukul-icon-512.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <link rel="preload" as="image" href="/mukul-logo.jpg" />
+  <link rel="stylesheet" href="/assets/${entryCss}" data-precedence="default" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" data-precedence="default" />
+  <link rel="modulepreload" href="/assets/${entryJs}" />
+${preloadTags}
+
+  <style>
+    html.dark, html.dark body {
+      background-color: #070905;
+      color: #f4f7f0;
+    }
+    html.light, html.light body {
+      background-color: #ffffff;
+      color: #0c1308;
+    }
+    [id^="container-f8f096"],
+    [class*="container-f8f096"],
+    iframe[src*="effectivecpmnetwork"],
+    iframe[src*="dischargeconceiteffort"],
+    #cf-turnstile-host {
+      display: none !important;
+      width: 0 !important;
+      height: 0 !important;
+      pointer-events: none !important;
+    }
+    #mukul-splash {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: #070905;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      transition: opacity 0.18s ease-out;
+    }
+    html.light #mukul-splash {
+      background: #ffffff;
+    }
+    #mukul-splash img {
+      width: 82px;
+      height: 82px;
+      border-radius: 22px;
+      box-shadow: 0 0 36px -6px rgba(163, 230, 53, 0.55);
+    }
+    #mukul-splash .brand {
+      font-family: 'Space Grotesk', system-ui, sans-serif;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      font-size: 25px;
+      color: #f4f7f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    html.light #mukul-splash .brand {
+      color: #0f1a06;
+    }
+    #mukul-splash .brand span {
+      background: linear-gradient(135deg, #bef264, #84cc16);
+      color: #070b02;
+      font-size: 12px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      letter-spacing: 0.05em;
+    }
+  </style>
 </head>
 <body>
-  <div id="hamyra-splash">
-    <img src="/hamyra-logo.jpg" alt="Hamyra" />
-    <div class="brand">Hamyra</div>
+  <div id="mukul-splash">
+    <img src="/mukul-logo.jpg" alt="Mukul Plus" />
+    <div class="brand">MUKUL <span>PLUS</span></div>
   </div>
   <div id="app"></div>
   <script>
     (function () {
       var kill = function () {
-        var s = document.getElementById('hamyra-splash');
+        var s = document.getElementById('mukul-splash');
         if (!s) return;
         s.style.opacity = '0';
         s.style.pointerEvents = 'none';
-        setTimeout(function () { if (s) s.style.display = 'none'; }, 240);
+        setTimeout(function () { if (s) s.style.display = 'none'; }, 200);
       };
       window.addEventListener('hamyra-hide-splash', kill, { once: true });
-      setTimeout(kill, 650);
+      setTimeout(kill, 500);
     })();
   </script>
   <script type="module" src="/assets/${entryJs}"></script>
@@ -616,12 +911,14 @@ ${preloadTags}
 }
 
 async function main() {
-  console.log('=== Building Fast Ad-Free Hamyra Bundle ===');
+  console.log('=== Building Mukul Plus (Dual-Theme Lime/Black & White/Lime, Lag-Free) ===');
   await fs.rm(DIST_DIR, { recursive: true, force: true });
   await fs.mkdir(ASSETS_DIR, { recursive: true });
   await fs.mkdir(LOGOS_DIR, { recursive: true });
 
-  // 1. Fetch upstream homepage HTML to auto-discover live entry JS & CSS hashes (with snapshot fallback)
+  const mukulThemeCss = await fs.readFile(path.join(PUBLIC_DIR, 'mukul-theme.css'), 'utf8');
+
+  // 1. Discover upstream HTML (live fetch with bundled snapshot fallback)
   let upstreamHtml = '';
   try {
     console.log(`Fetching upstream HTML from ${UPSTREAM_ORIGIN}/ via Impit Chrome TLS...`);
@@ -631,7 +928,7 @@ async function main() {
       console.log(`Fetched live upstream HTML (${upstreamHtml.length} chars)`);
     }
   } catch (err) {
-    console.warn(`[warn] Live HTML fetch returned ${err.message}; falling back to bundled upstream/index.html snapshot`);
+    console.warn(`[warn] Live HTML fetch unavailable (${err.message}); using bundled upstream/index.html snapshot`);
   }
 
   if (!upstreamHtml || !upstreamHtml.includes('/assets/index-')) {
@@ -649,26 +946,24 @@ async function main() {
   console.log(`Discovered Entry JS: ${entryJs}`);
   console.log(`Discovered Entry CSS: ${entryCss}`);
 
-  // Collect initial modulepreloads from HTML
   const initialPreloads = [];
   for (const m of upstreamHtml.matchAll(/<link[^>]+rel="modulepreload"[^>]+href="\/assets\/([^"]+)"/g)) {
     if (m[1] !== entryJs) initialPreloads.push(m[1]);
   }
 
-  // 2. Probe upstream APIs for CORS behavior from non-hamyra Origin
+  // 2. Probe upstream APIs for CORS behavior (default to true if sandbox blocks direct egress)
   const needEdgeProxy = await checkCorsNeed('https://edge.hamyra.xyz/bongo/sports');
   const needApiHamyraProxy = await checkCorsNeed('https://api.hamyra.xyz/mlbd/list?page=1');
   const needTmdbHlsProxy = await checkCorsNeed('https://edge.hamyra.xyz/tmdb/hls');
   console.log(
-    `CORS Proxy needed -> edge.hamyra.xyz: ${needEdgeProxy}, api.hamyra.xyz: ${needApiHamyraProxy}, edge/tmdb/hls: ${needTmdbHlsProxy}`
+    `CORS Proxy config -> /_edge: ${needEdgeProxy}, /_apihamyra: ${needApiHamyraProxy}, edge/tmdb/hls: ${needTmdbHlsProxy}`
   );
 
-  // 3. BFS Crawl & Download all JS/CSS assets + logos
+  // 3. Crawl & Download all JS/CSS assets + channel logos
   const assetQueue = [entryJs, entryCss, ...initialPreloads];
   const downloadedAssets = new Set();
   const logoQueue = new Set();
 
-  // Concurrency worker pool for fast downloading
   async function processAsset(assetName) {
     if (downloadedAssets.has(assetName)) return;
     downloadedAssets.add(assetName);
@@ -696,7 +991,9 @@ async function main() {
       logoQueue.add(l);
     }
 
-    if (assetName.endsWith('.js')) {
+    if (assetName.endsWith('.css')) {
+      text = patchStylesheet(text, mukulThemeCss);
+    } else if (assetName.endsWith('.js')) {
       if (assetName === entryJs) {
         console.log(`Patching main entry bundle ${assetName}...`);
         text = patchEntryChunk(text);
@@ -705,15 +1002,10 @@ async function main() {
         text = patched.code;
       }
 
-      // For CORS-restricted edge.hamyra.xyz JSON endpoints, route through our fast serverless proxy using a full origin URL
-      // (`location.origin + "/api/edge"`) via AST StringLiteral/TemplateElement awareness so string quotes/templates never break
-      // and `new URL(...)` always receives a valid absolute URL!
-      // Direct media/binary/HLS endpoints (/bongo/hls, /bongo/live, /tmdb/hls, /tmdb/seg, /mlbd/stream, /download/apk)
-      // stay on direct `https://edge.hamyra.xyz/...` so <video>/<a>/hls.js stream at full CDN speed!
+      // Route CORS-restricted JSON API calls via `/_edge` and `/_apihamyra` (non-`/api/` prefixes so Vercel's
+      // filesystem `/api/*` router never shadows our `vercel.json` rewrites!), while keeping high-bandwidth
+      // direct media/video/HLS segments (`bongo/hls`, `bongo/live`, `tmdb/seg`, `mlbd/stream`, `download/apk`) direct!
       if (needEdgeProxy) {
-        // Protect direct high-bandwidth media endpoints built via `${var}/bongo/hls` etc.
-        // Note: /tmdb/hls returns small text M3U8 manifests fetched via XHR/fetch by hls.js, so if edge/tmdb/hls
-        // requires Origin: www.hamyra.xyz, we route /tmdb/hls through /api/edge while keeping /tmdb/seg direct!
         const directMediaPattern = needTmdbHlsProxy
           ? 'bongo\\/hls|bongo\\/live|tmdb\\/seg|mlbd\\/stream|download\\/apk'
           : 'bongo\\/hls|bongo\\/live|tmdb\\/hls|tmdb\\/seg|mlbd\\/stream|download\\/apk';
@@ -722,26 +1014,25 @@ async function main() {
           new RegExp(`\`\\$\\{([A-Za-z0-9_$]+)\\}\\/(${directMediaPattern})`, 'g'),
           '`https://edge.hamyra.xyz/$2'
         );
-        // Replace standalone string literal "https://edge.hamyra.xyz" -> runtime full-origin expression
         text = text.replace(
           /"https:\/\/edge\.hamyra\.xyz"/g,
-          '(typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz")'
+          '(typeof location<"u"?location.origin+"/_edge":"https://edge.hamyra.xyz")'
         );
-        // Replace quoted non-media prefixes "https://edge.hamyra.xyz/<path>"
         text = text.replace(
           new RegExp(`"https:\\/\\/edge\\.hamyra\\.xyz\\/(?!${directMediaPattern})([^"]*)"`, 'g'),
-          '((typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz")+"/$1")'
+          '((typeof location<"u"?location.origin+"/_edge":"https://edge.hamyra.xyz")+"/$1")'
         );
-        // Replace template literal non-media prefixes `https://edge.hamyra.xyz/<path>`
         text = text.replace(
           new RegExp(`\`https:\\/\\/edge\\.hamyra\\.xyz\\/(?!${directMediaPattern})`, 'g'),
-          '`${typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz"}/'
+          '`${typeof location<"u"?location.origin+"/_edge":"https://edge.hamyra.xyz"}/'
         );
       }
+
       if (needApiHamyraProxy) {
+        // Keep `/mlbd/hls/mp4` direct for `<video>` streaming while proxying JSON API calls through `/_apihamyra`
         text = text.replace(
           /"https:\/\/api\.hamyra\.xyz"/g,
-          '(typeof location<"u"?location.origin+"/api/apihamyra":"https://api.hamyra.xyz")'
+          '(typeof location<"u"?location.origin+"/_apihamyra":"https://api.hamyra.xyz")'
         );
       }
     }
@@ -769,46 +1060,7 @@ async function main() {
 
   console.log(`Downloaded, patched & syntax-verified ${downloadedAssets.size} assets.`);
 
-  // 4. Download static root files & discovered /logos/*.png (gracefully skipping any transient 403/404)
-  await Promise.all(
-    STATIC_ROOT_FILES.map(async (relPath) => {
-      try {
-        const res = await fetchWithRetry(`${UPSTREAM_ORIGIN}${relPath}`, {}, 2);
-        if (!res) return;
-        const outPath = path.join(DIST_DIR, relPath.replace(/^\//, ''));
-        await fs.mkdir(path.dirname(outPath), { recursive: true });
-        if (relPath.endsWith('.webmanifest')) {
-          const manifestText = await res.text();
-          await fs.writeFile(outPath, manifestText, 'utf8');
-        } else {
-          const buf = Buffer.from(await res.arrayBuffer());
-          await fs.writeFile(outPath, buf);
-        }
-      } catch (err) {
-        console.warn(`  [warn] Optional root static file skipped (${relPath}): ${err.message}`);
-        if (relPath === '/site.webmanifest') {
-          const fallbackManifest = JSON.stringify(
-            {
-              name: 'Hamyra — Free HD Streaming & Downloads',
-              short_name: 'Hamyra',
-              start_url: '/',
-              display: 'standalone',
-              background_color: '#070b16',
-              theme_color: '#070b16',
-              icons: [
-                { src: '/favicon.png', sizes: '192x192', type: 'image/png' },
-                { src: '/hamyra-icon-512.png', sizes: '512x512', type: 'image/png' },
-              ],
-            },
-            null,
-            2
-          );
-          await fs.writeFile(path.join(DIST_DIR, 'site.webmanifest'), fallbackManifest, 'utf8');
-        }
-      }
-    })
-  );
-
+  // 4. Download channel logos
   await Promise.all(
     Array.from(logoQueue).map(async (logoName) => {
       try {
@@ -821,9 +1073,36 @@ async function main() {
       }
     })
   );
-  console.log(`Downloaded ${STATIC_ROOT_FILES.length} root static files and ${logoQueue.size} channel logos.`);
 
-  // 5. Verify zero residual ad-network URLs across all JS files
+  // 5. Copy custom Mukul Plus brand icons & OG image from `public/` into `dist/`
+  const publicFiles = await fs.readdir(PUBLIC_DIR);
+  for (const file of publicFiles) {
+    if (file === 'mukul-theme.css') continue;
+    await fs.copyFile(path.join(PUBLIC_DIR, file), path.join(DIST_DIR, file));
+  }
+
+  // 6. Generate Mukul Plus PWA `site.webmanifest` and `robots.txt`
+  const manifestJson = JSON.stringify(
+    {
+      name: 'Mukul Plus — HD Movies, Series & Live TV',
+      short_name: 'Mukul Plus',
+      description: 'Lag-free HD movies, Bangla natok, web series, live sports & direct downloads.',
+      start_url: '/',
+      display: 'standalone',
+      background_color: '#070905',
+      theme_color: '#a3e635',
+      icons: [
+        { src: '/favicon.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+        { src: '/mukul-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+      ],
+    },
+    null,
+    2
+  );
+  await fs.writeFile(path.join(DIST_DIR, 'site.webmanifest'), manifestJson, 'utf8');
+  await fs.writeFile(path.join(DIST_DIR, 'robots.txt'), `User-agent: *\nAllow: /\n`, 'utf8');
+
+  // 7. Verify zero residual ad-network URLs across all JS files
   const jsFiles = (await fs.readdir(ASSETS_DIR)).filter((f) => f.endsWith('.js'));
   for (const jf of jsFiles) {
     const content = await fs.readFile(path.join(ASSETS_DIR, jf), 'utf8');
@@ -835,15 +1114,15 @@ async function main() {
   }
   console.log(`Verified 0 ad-network domains across all ${jsFiles.length} JS bundles.`);
 
-  // 6. Generate clean, fast SPA dist/index.html
+  // 8. Generate Mukul Plus SPA `dist/index.html`
   const cleanHtml = buildCleanIndexHtml({
     entryJs,
     entryCss,
     preloadChunks: initialPreloads,
   });
   await fs.writeFile(path.join(DIST_DIR, 'index.html'), cleanHtml, 'utf8');
-  console.log('Generated clean ad-free dist/index.html');
-  console.log('=== Build Completed Successfully! ===');
+  console.log('Generated Mukul Plus Dual-Theme dist/index.html');
+  console.log('=== Mukul Plus Build Completed Successfully! ===');
 }
 
 main().catch((err) => {

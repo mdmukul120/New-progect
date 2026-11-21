@@ -40,21 +40,28 @@
       ]
     }
   ],
+  "redirects": [
+    {
+      "source": "/app",
+      "destination": "/",
+      "permanent": false
+    }
+  ],
   "rewrites": [
     {
       "source": "/_serverFn/:path*",
       "destination": "/api/proxy?__target=serverfn&__path=:path*"
     },
     {
-      "source": "/api/edge/:path*",
+      "source": "/_edge/:path*",
       "destination": "/api/proxy?__target=edge&__path=:path*"
     },
     {
-      "source": "/api/apihamyra/:path*",
+      "source": "/_apihamyra/:path*",
       "destination": "/api/proxy?__target=apihamyra&__path=:path*"
     },
     {
-      "source": "/((?!api/|assets/|logos/|favicon\\.png|hamyra-|icon-|og-image\\.jpg|site\\.webmanifest|robots\\.txt).*)",
+      "source": "/((?!api/|_serverFn/|_edge/|_apihamyra/|assets/|logos/|favicon\\.png|mukul-|hamyra-|icon-|og-image\\.jpg|site\\.webmanifest|robots\\.txt).*)",
       "destination": "/index.html"
     }
   ]

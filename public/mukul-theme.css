@@ -1,0 +1,435 @@
+/* ==========================================================================
+   MUKUL PLUS — Dual Theme Design System
+   1. Dark Theme (Default `html.dark`): Obsidian Matte Black (#070905) + Electric Lime (#a3e635)
+   2. Light Theme (`html.light`): Crisp Pure White (#ffffff) + Fresh Lime (#65a30d / #84cc16)
+   Zero-Lag GPU-Composited Responsive UI
+   ========================================================================== */
+
+:root,
+html.dark {
+  color-scheme: dark;
+  --radius: 0.9rem;
+  --background: #070905;
+  --foreground: #f4f7f0;
+  --surface: #0d1209;
+  --surface-2: #141c0f;
+  --card: #0d1209;
+  --card-foreground: #f4f7f0;
+  --popover: #10160c;
+  --popover-foreground: #f4f7f0;
+  --primary: #a3e635;
+  --primary-foreground: #070b02;
+  --neon: #a3e635;
+  --live: #ef4444;
+  --secondary: #151e10;
+  --secondary-foreground: #f4f7f0;
+  --muted: #141c0f;
+  --muted-foreground: #94a38a;
+  --accent: #a3e635;
+  --accent-foreground: #070b02;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: rgba(163, 230, 53, 0.14);
+  --input: rgba(163, 230, 53, 0.16);
+  --ring: #a3e635;
+  --color-primary: #a3e635;
+  --color-border: rgba(163, 230, 53, 0.14);
+  --color-cyan-200: #ecfccb;
+  --color-cyan-300: #bef264;
+  --color-cyan-400: #a3e635;
+  --color-cyan-500: #84cc16;
+  --gradient-hero: linear-gradient(135deg, rgba(163, 230, 53, 0.95), rgba(101, 163, 13, 0.85));
+  --gradient-glow: radial-gradient(60% 55% at 50% 0%, rgba(163, 230, 53, 0.22), transparent 70%);
+  --gradient-card: linear-gradient(180deg, rgba(21, 28, 16, 0.82), rgba(7, 9, 5, 0.65));
+  --shadow-glow: 0 20px 55px -16px rgba(163, 230, 53, 0.36);
+  --shadow-neon: 0 0 32px rgba(163, 230, 53, 0.42);
+}
+
+html.light {
+  color-scheme: light;
+  --radius: 0.9rem;
+  --background: #ffffff;
+  --foreground: #0c1308;
+  --surface: #f7fee7;
+  --surface-2: #eef8d6;
+  --card: #ffffff;
+  --card-foreground: #0c1308;
+  --popover: #ffffff;
+  --popover-foreground: #0c1308;
+  --primary: #65a30d;
+  --primary-foreground: #ffffff;
+  --neon: #4d7c0f;
+  --live: #dc2626;
+  --secondary: #f2f9e3;
+  --secondary-foreground: #121c0c;
+  --muted: #f3f7ec;
+  --muted-foreground: #4b5943;
+  --accent: #84cc16;
+  --accent-foreground: #0b1205;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: rgba(101, 163, 13, 0.22);
+  --input: rgba(101, 163, 13, 0.24);
+  --ring: #65a30d;
+  --color-primary: #65a30d;
+  --color-border: rgba(101, 163, 13, 0.2);
+  --color-cyan-200: #d9f99d;
+  --color-cyan-300: #4d7c0f;
+  --color-cyan-400: #65a30d;
+  --color-cyan-500: #4d7c0f;
+  --gradient-hero: linear-gradient(135deg, #84cc16, #4d7c0f);
+  --gradient-glow: radial-gradient(60% 55% at 50% 0%, rgba(132, 204, 22, 0.2), transparent 70%);
+  --gradient-card: linear-gradient(180deg, rgba(247, 254, 231, 0.92), rgba(255, 255, 255, 0.95));
+  --shadow-glow: 0 18px 42px -14px rgba(101, 163, 13, 0.28);
+  --shadow-neon: 0 0 24px rgba(132, 204, 22, 0.35);
+}
+
+/* Base & Zero-Lag Performance Optimizations */
+html,
+body {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  transition: background-color 0.18s ease, color 0.18s ease;
+  -webkit-overflow-scrolling: touch;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+}
+
+/* Subtle ambient top lime aura — pure CSS, 0% GPU/CPU drain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 440px;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(75% 100% at 50% -25%, rgba(163, 230, 53, 0.14), transparent 72%);
+}
+
+html.light body::before {
+  background: radial-gradient(75% 100% at 50% -25%, rgba(132, 204, 22, 0.2), transparent 72%);
+}
+
+/* Content-visibility & smooth hardware compositing for long carousels/grids */
+main > section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}
+
+/* Kill continuous zoom repaint lag on hero images */
+.animate-ken-burns {
+  animation: none !important;
+  transform: scale(1.01) !important;
+}
+
+/* Card hover polish in Lime */
+.netflix-card {
+  border-radius: 0.85rem !important;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease !important;
+}
+
+.netflix-card:hover {
+  transform: translateY(-4px) scale(1.025) !important;
+  box-shadow: 0 18px 36px -16px rgba(0, 0, 0, 0.55), 0 0 26px -8px rgba(163, 230, 53, 0.45) !important;
+}
+
+html.light .netflix-card {
+  background-color: #f6faf0;
+  box-shadow: 0 6px 18px -8px rgba(15, 23, 10, 0.12);
+}
+
+html.light .netflix-card:hover {
+  box-shadow: 0 18px 34px -14px rgba(101, 163, 13, 0.34), 0 6px 16px -6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Glass surfaces */
+.glass {
+  background: rgba(16, 22, 12, 0.76) !important;
+  border: 1px solid rgba(163, 230, 53, 0.16) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-strong {
+  background: rgba(14, 19, 11, 0.88) !important;
+  border: 1px solid rgba(163, 230, 53, 0.2) !important;
+}
+
+html.light .glass {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1px solid rgba(101, 163, 13, 0.24) !important;
+  box-shadow: 0 8px 24px -12px rgba(20, 40, 5, 0.1);
+}
+
+html.light .glass-strong {
+  background: rgba(247, 254, 231, 0.95) !important;
+  border: 1px solid rgba(101, 163, 13, 0.28) !important;
+}
+
+/* ==========================================================================
+   MUKUL PLUS Header & Theme Toggle Pill
+   ========================================================================== */
+.mukul-plus-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.14rem 0.46rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  line-height: 1.1;
+  background: linear-gradient(135deg, #bef264, #84cc16);
+  color: #070b02;
+  box-shadow: 0 0 16px rgba(163, 230, 53, 0.45);
+}
+
+html.light .mukul-plus-pill {
+  background: linear-gradient(135deg, #84cc16, #4d7c0f);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(101, 163, 13, 0.28);
+}
+
+.mukul-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 2.3rem;
+  padding: 0 0.78rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(163, 230, 53, 0.3);
+  background: rgba(163, 230, 53, 0.11);
+  color: #bef264;
+  transition: transform 0.16s ease, background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.mukul-theme-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(163, 230, 53, 0.2);
+  border-color: rgba(163, 230, 53, 0.55);
+}
+
+html.light .mukul-theme-btn {
+  border: 1px solid rgba(101, 163, 13, 0.34);
+  background: #f7fee7;
+  color: #365314;
+}
+
+html.light .mukul-theme-btn:hover {
+  background: #ecfccb;
+  border-color: #65a30d;
+}
+
+/* ==========================================================================
+   LIGHT THEME ADAPTIVE OVERRIDES (White + Lime)
+   ========================================================================== */
+
+/* Header & Navigation in Light Mode */
+html.light header > div {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-bottom-color: rgba(101, 163, 13, 0.18) !important;
+  box-shadow: 0 6px 24px -14px rgba(20, 40, 5, 0.12) !important;
+  backdrop-filter: blur(14px);
+}
+
+html.light header nav a,
+html.light header a[aria-label="Search"],
+html.light header button[aria-label="Open menu"] {
+  color: #1a2e05 !important;
+}
+
+html.light header nav a:hover {
+  background-color: rgba(132, 204, 22, 0.14) !important;
+  color: #365314 !important;
+}
+
+html.light .mukul-brand-title {
+  color: #0f1a06 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* Mobile slide-out drawer in Light Mode */
+html.light header div.fixed.left-0.top-0 {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+  border-right-color: rgba(101, 163, 13, 0.22) !important;
+  color: #0f1a06 !important;
+}
+
+/* Mobile bottom navigation bar in Light Mode */
+html.light nav[aria-label="Primary"] > div {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(101, 163, 13, 0.28) !important;
+  box-shadow: 0 14px 36px -10px rgba(25, 45, 5, 0.18) !important;
+}
+
+html.light nav[aria-label="Primary"] a {
+  color: #4b5943 !important;
+}
+
+html.light nav[aria-label="Primary"] a[aria-current="page"] {
+  background-color: #84cc16 !important;
+  color: #070b02 !important;
+}
+
+/* Page Headings & Section Titles in Light Mode */
+html.light main h1,
+html.light main h2,
+html.light main h3,
+html.light section h1,
+html.light section h2,
+html.light footer a,
+html.light details summary {
+  color: #0f1a06 !important;
+}
+
+/* Keep text over dark movie/hero posters & featured dark banners crisp white even in light mode */
+html.light .group\/hero h1,
+html.light .group\/hero p,
+html.light .group\/hero span,
+html.light section .rounded-3xl h3,
+html.light section .rounded-3xl p,
+html.light section .rounded-3xl span,
+html.light .netflix-card p,
+html.light .netflix-card span,
+html.light [data-shaka-player-container] span {
+  color: #ffffff !important;
+}
+
+/* Keep Play / Browse All solid light buttons dark-inked */
+html.light .group\/hero a.bg-white,
+html.light .group\/hero a.bg-\[\#a3e635\],
+html.light section .rounded-3xl a.bg-white {
+  color: #070b02 !important;
+}
+
+/* Hero bottom fade smoothly blends into white in Light Mode */
+html.light .group\/hero > div[style*="linear-gradient"] {
+  background: linear-gradient(
+    to top,
+    #ffffff 0%,
+    rgba(12, 18, 8, 0.44) 24%,
+    rgba(12, 18, 8, 0.58) 55%,
+    rgba(12, 18, 8, 0.24) 100%
+  ) !important;
+}
+
+/* Subtitles, See All links, Card titles & Channel names in Light Mode */
+html.light main section a[href^="/movies"],
+html.light main section a[href^="/series"],
+html.light section > div.mb-6 > p,
+html.light section > div.mb-8 > p,
+html.light section > div.mx-auto > p {
+  color: #3f4f36 !important;
+}
+
+html.light a.group.block > p,
+html.light button.group > span.line-clamp-2 {
+  color: #132009 !important;
+}
+
+html.light a.group.block > p > span {
+  color: #5c6b52 !important;
+}
+
+/* Search inputs, Filter buttons, Dropdown Portals, Pagination & Sidebars in Light Mode */
+html.light input:not([type="range"]),
+html.light textarea {
+  background-color: #f7fee7 !important;
+  color: #0f1a06 !important;
+  border-color: rgba(101, 163, 13, 0.32) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: #607056 !important;
+}
+
+html.light section button[aria-expanded],
+html.light nav[aria-label="Pagination"] button:not([aria-current="page"]) {
+  background-color: #f4fce3 !important;
+  color: #1a2e05 !important;
+  border: 1px solid rgba(101, 163, 13, 0.25) !important;
+}
+
+html.light section button[aria-expanded] span,
+html.light section button[aria-expanded] svg {
+  color: #2c4410 !important;
+}
+
+/* Portal Dropdown Menu (`bg-[#0b0f18]`) in Light Mode */
+html.light body > div.fixed.z-\[100\].rounded-xl {
+  background-color: #ffffff !important;
+  border: 1px solid rgba(101, 163, 13, 0.28) !important;
+  box-shadow: 0 18px 40px -12px rgba(20, 40, 5, 0.2) !important;
+}
+
+html.light body > div.fixed.z-\[100\].rounded-xl button {
+  color: #1a2e05 !important;
+}
+
+html.light body > div.fixed.z-\[100\].rounded-xl button:hover {
+  background-color: #ecfccb !important;
+}
+
+/* Sidebars, Live TV info cards & Footer in Light Mode */
+html.light aside,
+html.light details,
+html.light footer {
+  background-color: #f8fcf2 !important;
+  border-color: rgba(101, 163, 13, 0.2) !important;
+  color: #132009 !important;
+}
+
+html.light aside button {
+  color: #21350b !important;
+}
+
+/* Provider icon tiles in Light Mode */
+html.light a[href^="/provider/"] > span:first-child {
+  background-color: #f4fce3 !important;
+  border: 1px solid rgba(101, 163, 13, 0.25) !important;
+}
+
+html.light a[href^="/provider/"] > span:last-child {
+  color: #1f2e12 !important;
+}
+
+html.light .top10-rank {
+  color: #ecfccb !important;
+  -webkit-text-stroke: 2px #65a30d !important;
+  text-shadow: 0 8px 20px rgba(101, 163, 13, 0.22) !important;
+}
+
+/* Responsive mobile polish */
+@media (max-width: 640px) {
+  .group\/hero {
+    height: 76svh !important;
+    min-height: 460px !important;
+  }
+}
+
+/* Skeleton shimmer in Lime tint */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(163, 230, 53, 0.05) 25%,
+    rgba(163, 230, 53, 0.13) 50%,
+    rgba(163, 230, 53, 0.05) 75%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+html.light .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(132, 204, 22, 0.08) 25%,
+    rgba(132, 204, 22, 0.2) 50%,
+    rgba(132, 204, 22, 0.08) 75%
+  ) !important;
+  background-size: 200% 100% !important;
+}

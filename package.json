@@ -1,9 +1,9 @@
 {
-  "name": "hamyra-fast-adfree",
-  "version": "1.0.0",
+  "name": "mukul-plus",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "High-performance 100% ad-free streaming & download web app",
+  "description": "Mukul Plus — Lag-free Dual-Theme (Lime/Black & White/Lime) HD Streaming & Direct Download Platform",
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "node scripts/dev-server.mjs"
