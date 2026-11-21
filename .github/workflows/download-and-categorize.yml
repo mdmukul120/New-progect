@@ -1,0 +1,69 @@
+name: Download and Categorize Links
+
+on:
+  push:
+    paths:
+      - '.github/workflows/download-and-categorize.yml'
+      - 'process_links.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download original zip
+        run: |
+          curl -L --fail -o CRICFy_v7.4.3.zip "https://github.com/mdmukul120/Apk-zip-release-/releases/download/Cricfyapk/CRICFy_v7.4.3.zip"
+          echo "--- sha256 (expected b5a78589bc1d9cddb6542e2ee2e82b7daf8b408ffaac0db595e2b12f80ff2ed3) ---"
+          sha256sum CRICFy_v7.4.3.zip
+          ls -lh CRICFy_v7.4.3.zip
+
+      - name: Explore zip contents
+        run: |
+          echo "===== unzip -l (first 500 lines) ====="
+          unzip -l CRICFy_v7.4.3.zip | head -n 500
+          echo "===== unzip ====="
+          mkdir -p extracted
+          unzip -o CRICFy_v7.4.3.zip -d extracted
+          echo "===== file list (first 1000) ====="
+          find extracted -type f | sort | head -n 1000
+          echo "===== du ====="
+          du -sh extracted/* 2>/dev/null | sort -h
+          echo "===== file types (first 500) ====="
+          find extracted -type f -exec file {} \; | head -n 500
+          echo "===== total files ====="
+          find extracted -type f | wc -l
+
+      - name: Extract and categorize all links
+        run: python3 process_links.py
+
+      - name: Show categorized output
+        run: |
+          echo "===== output tree ====="
+          find output -type f | sort
+          echo "===== summary.md ====="
+          cat output/summary.md
+          echo "===== ls -lh output ====="
+          ls -lh output/
+          ls -lh output/CRICFy_links_categorized.zip
+
+      - name: Commit categorized output back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/ || true
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Categorized links from CRICFy_v7.4.3.zip [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+            echo "Pushed categorized output"
+          fi
