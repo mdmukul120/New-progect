@@ -190,6 +190,10 @@ function applyBrandAndLimeThemeToJs(rawCode) {
   code = code.replace(/— Hamyra"/g, '— Mukul Plus"');
   code = code.replace(/Hamyra —/g, 'Mukul Plus —');
   code = code.replace(/on Hamyra/g, 'on Mukul Plus');
+  code = code.replace(/How Hamyra /g, 'How Mukul Plus ');
+  code = code.replace(/Terms for using Hamyra/g, 'Terms for using Mukul Plus');
+  code = code.replace(/Free from Hamyra/g, 'Free from Mukul Plus');
+  code = code.replace(/children:"Hamyra"/g, 'children:"Mukul Plus"');
   code = code.replace(/Watch together on Hamyra/g, 'Watch together on Mukul Plus');
   code = code.replace(/\["Hamyra",/g, '["MukulPlus",');
   code = code.replace(/\/hamyra-logo\.(jpg|png|webp)/g, '/mukul-logo.$1');
@@ -613,7 +617,7 @@ function patchSubChunk(filename, rawCode) {
   if (/^index-[A-Za-z0-9_-]+\.js$/.test(filename) && code.includes('Frequently Asked Questions')) {
     const beforeLen = code.length;
     code = code.replace(
-      /,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"About [^"]*?"\)[^]*?\}\)\]\}\)\s*,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"Frequently Asked Questions"[^]*?\}\)\]\}\)/,
+      /,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"About [^"]*?"\}[^]*?\}\)\]\}\)\s*,\s*[A-Za-z0-9_$]+\.jsxs\("section",\{className:"mx-auto max-w-\[900px\][^]*?children:"Frequently Asked Questions"\}[^]*?\}\)\]\}\)/,
       ''
     );
     if (code.length !== beforeLen) {
