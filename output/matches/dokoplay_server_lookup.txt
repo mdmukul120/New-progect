@@ -1,0 +1,18 @@
+<!DOCTYPE html><html lang="en"  data-adblockkey=MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANnylWw2vLY4hUn9w06zQKbhKBfvjFUCsdFlb6TdQhxb9RXWXuI4t31c+o8fYOv/s8q1LGPga3DE1L/tHU4LENMCAwEAAQ==_cb/NUCCYtycuzOb5acvivURJLM7IEDRM60uRO++WT8zkFXAy+jmxBoeHVS4xDlQU4fGHfnOPnPiWR9/VJktg7Q==><head><meta charset="utf-8"><title>dokoplay.xyz&nbsp;-&nbsp;This website is for sale!&nbsp;-&nbsp;dokoplay Resources and Information.</title><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=0"><meta name="description" content="This website is for sale! dokoplay.xyz is your first and best source for information about dokoplay. Here you will also find topics relating to issues of general interest. We hope you find what you are looking for!"><link
+        rel="icon"
+        type="image/png"
+        href="//img.sedoparking.com/templates/logos/sedo_logo.png"
+/></head><body><img width="16" height="16" src="https://img.sedoparking.com/images/js_preloader.gif" alt="" /><script type="text/javascript">
+    function doRedirect() {
+        const request = new XMLHttpRequest();
+        request.open('GET', "\/\/dokoplay.xyz/search/tsc.php?ses\u003DogcDBdhyACGo\u002D62WaTdNvrNXhL4JqN8T1e7\u002DJtOpP\u002DUnuqQ\u002DGLCjgqIzrkG0XizWOcuF54ZPgmd43BOKwuKGZs90QiKyL8g9S\u002DJfGjkvtrs76sIntG9QK63vgLmQbjn7sz_6oHe1spYGvc_fYtYs8YptUrcg_ri2U8okksQyxw2ytOr2XZZXuaNA9yNodseFvswePPox6pSK0kDDJG2OArEMDxbWOE9wSfWQSyJ5FNhEgMc3\u002D_r_iXAaFyfqYwLi5pjG88Z6zMz2dJkUw8PwT3wByhvQvoVdGv\u002DRsB_UxXHRtrnAnKeuZfsA2JTvVEyF1K6EW7gpQgl74i_yX0LgllPKDqhEMTQiBAzrggedWGoDPG2Yx4bs2pa1Uz39u8C\u0026cv\u003D2");
+        request.send();
+                request.onreadystatechange = function () {
+            if (request.readyState === 4 && request.status === 200) {
+                window.location = "\/\/dokoplay.xyz\/search\/redirect.php\u003Ff\u003Dhttp\u00253A\u00252F\u00252Fresultlookup.com\u00253Fdn\u00253Ddokoplay.xyz\u002526sksubid\u00253D253786\u002526_slsen\u00253D1\u0026v\u003DogcLAI_zR\u002DwfidsWGdm5H55Xcq2QhrxDP5NJRZzgFiH4EUY\u002Dd4FcY6UPh7jw8GietcIi3sAMSznHm5klcgjUzY91a6c0nOE7qr8rq0IXvnMvCNeo\u002DrijsVZlahLXI8U2Gr8tuTZROMw7TLHwaRVMExRuVk_JNqaHZdWt72qIUHm34BJL737PEvSlUTxNdPAHw\u0026l\u003DogcIwHLVO01EUOG4\u002DsGmotahpgqSy38O3OlLoll\u002DzCpekJTVrfU_Y6B9ULpNtz0fMaOX57ZwWD0Ieo\u002DusK60\u002DHbsdS1E7rOW2vscqkBnQa9m4EdNsPyyIRdyxQ1cc_5gTBlW9AOTDCeb1gE5Pve0B5et2_ENUzDfTaqcKLsrNVbGprDbSsKM9LvVie5Wb6VXmKQnsN6oNH3qNbvOTYF0CxCoQJ0abqAHIVH9EkAYxb\u002Dv2f4g4YBpIXyRw9s4b2UtXcfnrCeeGnBU\u002D0HWOebadLwaJPnhfo2GOocfQ4xH4ARbwZbAsS8lwSsHnhEkBFm5UsSq7SpfYV3E6xVlUMDblzKi5U0Kpm7206nwky3oO76hg_7FOD_mzjCyzostM40YqSSXfo6wQ4jk_4xMdig0fyHnS2HSmixGN7s1PuW5Ubi9ox6XGpP4YkQay6d7b\u002DrNAcBF0lfsIegiiiIAKaAzTUQzKyfNwJxpJyrb4NGRWH7JM6r7DARON8bzlkt\u002D_j3XDM4VUV6q1qIStuFCTtiSOyzHDUF9O_uhdAmV881PHBC8BD5MA5YNVQwjUaBqrGoCER3woTNf\u002Dbl6QSiyURaV3SuVcK5hOe5t58yfzqvjxuFISKAOmE8kcRR5j_rWpbASphDCO3Vh17Mq2v4E\u002DE9dnWi5jbJfkAN_FJ8YZvFAOLnE83OAd\u002DwtbsJYLQU5WIN8tbpCJ299TAPQjcC";
+            }
+        };
+            }
+
+    doRedirect();
+</script></body></html>

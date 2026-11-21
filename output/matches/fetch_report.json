@@ -1,0 +1,134 @@
+{
+  "fetched_at": "2026-11-21T11:21:08Z",
+  "p_json": {
+    "path": "extracted/CRICFy_v7.4 (3)/p/p.json",
+    "size": 166490,
+    "json_type": "dict",
+    "top_keys": [
+      "nm",
+      "ddd",
+      "h",
+      "w",
+      "meta",
+      "layers",
+      "v",
+      "fr",
+      "op",
+      "ip",
+      "assets"
+    ],
+    "keys_count": 11,
+    "sample": {
+      "nm": "\"Comp 2\"",
+      "ddd": "0",
+      "h": "1080",
+      "w": "1920",
+      "meta": "{\"g\": \"@lottiefiles/toolkit-js 0.33.2\"}",
+      "layers": "[{\"ty\": 0, \"nm\": \"Comp 1\", \"sr\": 1, \"st\": 0, \"op\": 71, \"ip\": 0, \"hd\": false, \"ddd\": 0, \"bm\": 0, \"hasMask\": false, \"ao\": 0, \"ks\": {\"a\": {\"a\": 0, \"k\": [960, 540, 0], \"ix\": 1}, \"s\": {\"a\": 0, \"k\": [224, 2…",
+      "v": "\"5.4.3\"",
+      "fr": "24",
+      "op": "76",
+      "ip": "0",
+      "assets": "[{\"nm\": \"\", \"id\": \"comp_0\", \"layers\": [{\"ty\": 3, \"nm\": \"Null 2\", \"sr\": 1, \"st\": 0, \"op\": 247, \"ip\": 0, \"hd\": false, \"ddd\": 0, \"bm\": 0, \"hasMask\": false, \"ao\": 0, \"ks\": {\"a\": {\"a\": 0, \"k\": [0, 0, 0], \"…"
+    }
+  },
+  "dk_json": {
+    "path": "extracted/CRICFy_v7.4 (3)/dk/dk.json",
+    "size": 9508,
+    "json_type": "dict",
+    "top_keys": [
+      "v",
+      "fr",
+      "ip",
+      "op",
+      "w",
+      "h",
+      "nm",
+      "ddd",
+      "assets",
+      "layers",
+      "markers"
+    ],
+    "keys_count": 11,
+    "sample": {
+      "v": "\"5.7.4\"",
+      "fr": "30",
+      "ip": "0",
+      "op": "40",
+      "w": "500",
+      "h": "500",
+      "nm": "\"Live Icon Lottie\"",
+      "ddd": "0",
+      "assets": "[]",
+      "layers": "[{\"ddd\": 0, \"ind\": 1, \"ty\": 4, \"nm\": \"Layer 2\", \"sr\": 1, \"ks\": {\"o\": {\"a\": 0, \"k\": 100, \"ix\": 11}, \"r\": {\"a\": 0, \"k\": 0, \"ix\": 10}, \"p\": {\"a\": 0, \"k\": [250.281, 176.494, 0], \"ix\": 2, \"l\": 2}, \"a\": {\"a…",
+      "markers": "[]"
+    }
+  },
+  "match_strings_count": 301,
+  "responses": [
+    {
+      "name": "r2_config",
+      "url": "https://pub-9610baca6bf84734bf9d40546dc754a6.r2.dev/config.txt",
+      "status": 200,
+      "bytes": 236,
+      "is_json": false,
+      "match_candidates": 0,
+      "file": "r2_config.txt"
+    },
+    {
+      "name": "dokoplay_server_lookup",
+      "url": "https://dokoplay.xyz/server_lookup.php?channel_id=premium",
+      "status": 200,
+      "bytes": 3057,
+      "is_json": false,
+      "match_candidates": 0,
+      "file": "dokoplay_server_lookup.txt"
+    },
+    {
+      "name": "dokoplay_home",
+      "url": "https://dokoplay.xyz/",
+      "status": 200,
+      "bytes": 3057,
+      "is_json": false,
+      "match_candidates": 0,
+      "file": "dokoplay_home.txt"
+    },
+    {
+      "name": "cfygsjsgdj141_top",
+      "url": "https://cfygsjsgdj141.top/",
+      "status": null,
+      "bytes": 59,
+      "is_json": false,
+      "match_candidates": 0,
+      "file": "cfygsjsgdj141_top.txt"
+    },
+    {
+      "name": "rtstv_xyz",
+      "url": "https://rtstv.xyz/",
+      "status": 200,
+      "bytes": 27422,
+      "is_json": false,
+      "match_candidates": 0,
+      "file": "rtstv_xyz.txt"
+    },
+    {
+      "name": "newembedplay_xyz",
+      "url": "https://newembedplay.xyz/",
+      "status": 200,
+      "bytes": 149,
+      "is_json": false,
+      "match_candidates": 0,
+      "file": "newembedplay_xyz.txt"
+    },
+    {
+      "name": "pscp_tv",
+      "url": "https://pscp.tv/",
+      "status": 200,
+      "bytes": 20372,
+      "is_json": false,
+      "match_candidates": 0,
+      "file": "pscp_tv.txt"
+    }
+  ],
+  "total_match_candidates": 0
+}
