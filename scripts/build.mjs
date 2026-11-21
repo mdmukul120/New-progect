@@ -182,8 +182,15 @@ function applyBrandAndLimeThemeToJs(rawCode) {
   code = code.replace(/HamyraBD/g, 'Mukul Plus');
   code = code.replace(/https:\/\/www\.hamyra\.xyz\/og-image\.jpg/g, `${PROD_ORIGIN}/og-image.jpg`);
   code = code.replace(/`https:\/\/www\.hamyra\.xyz\//g, `\`${PROD_ORIGIN}/`);
-  code = code.replace(/"https:\/\/www\.hamyra\.xyz\/(movies|series|live-tv|privacy|terms|sports|cricket|downloads|app)"/g, `"${PROD_ORIGIN}/$1"`);
+  code = code.replace(/"https:\/\/www\.hamyra\.xyz\/"/g, `"${PROD_ORIGIN}/"`);
+  code = code.replace(/"https:\/\/www\.hamyra\.xyz\/(movies|series|live-tv|privacy|terms|sports|cricket|cricket\/videos|turkish|video-downloader|downloads|app)"/g, `"${PROD_ORIGIN}/$1"`);
   code = code.replace(/const ([A-Za-z0-9_$]+)="https:\/\/www\.hamyra\.xyz",([A-Za-z0-9_$]+)="Hamyra"/g, `const $1="${PROD_ORIGIN}",$2="Mukul Plus"`);
+  code = code.replace(/\b([A-Za-z0-9_$]+)="Hamyra",/g, '$1="Mukul Plus",');
+  code = code.replace(/On Hamyra\b/g, 'On Mukul Plus');
+  code = code.replace(/Hamyra lets you/g, 'Mukul Plus lets you');
+  code = code.replace(/Hamyra is a/g, 'Mukul Plus is a');
+  code = code.replace(/Hamyra streams/g, 'Mukul Plus streams');
+  code = code.replace(/\$\{[A-Za-z0-9_$]+\}-তে/g, 'Mukul Plus-এ');
   code = code.replace(/\| Hamyra`/g, '| Mukul Plus`');
   code = code.replace(/\| Hamyra"/g, '| Mukul Plus"');
   code = code.replace(/— Hamyra`/g, '— Mukul Plus`');
@@ -542,6 +549,18 @@ function patchEntryChunk(rawCode) {
     'rounded-full bg-[#a3e635] text-[#070b02] px-7 sm:px-8 py-3 sm:py-3.5 text-sm sm:text-base font-black shadow-[0_10px_30px_-8px_rgba(163,230,53,0.55)]'
   );
 
+  // Redirect `/live-tv/$ch` links on Homepage Top Channels directly to `/live-tv?ch=...` or via beforeLoad
+  code = code.replace(
+    /validateSearch:([A-Za-z0-9_$]+)=>\(\{s:typeof \1\.s=="number"\?\1\.s:void 0,cat:typeof \1\.cat=="string"\?\1\.cat:void 0,sport:typeof \1\.sport=="string"\?\1\.sport:void 0\}\),loader:async\(\{params:([A-Za-z0-9_$]+)\}\)=>\{try\{return await ([A-Za-z0-9_$]+)\(\2\.ch\)\}catch\{return null\}\}/,
+    (m) => {
+      const boMatch = code.match(/beforeLoad:\(\)=>\{throw ([A-Za-z0-9_$]+)\(\{to:"\/",replace:!0\}\)\}/);
+      if (!boMatch) return m;
+      const redirectFn = boMatch[1];
+      console.log(`  [patched] Added instant beforeLoad redirect on /live-tv/$ch -> /live-tv?ch=$ch`);
+      return `beforeLoad:({params:_p,search:_s})=>{throw ${redirectFn}({to:"/live-tv",search:{ch:_p.ch,s:_s?.s,cat:_s?.cat,sport:_s?.sport},replace:!0})},${m}`;
+    }
+  );
+
   // 16. Speed up splash screen fallback
   code = code.replace(/setTimeout\(kill,\s*900\)/g, 'setTimeout(kill,120)');
 
@@ -673,6 +692,27 @@ function patchSubChunk(filename, rawCode) {
     code = code.replace(/text-red-400/g, 'text-neon');
     code = code.replace(/bg-red-500/g, 'bg-neon');
     modified = true;
+  }
+
+  // 3b. Redirect `/live-tv/$ch` (`live-tv_._ch-*.js`) to `/live-tv?ch=$ch` so deep links like
+  // `/live-tv/t-sports` load the working `/live-tv` route directly instead of upstream's broken `N8` copy!
+  if (/^live-tv_\._ch-[A-Za-z0-9_-]+\.js$/.test(filename)) {
+    const navMatch = code.match(/from"\.\/(index-[A-Za-z0-9_-]+\.js)"/);
+    if (navMatch) {
+      const entryFile = navMatch[1];
+      const paramMatch = code.match(/import\{([A-Za-z0-9_$]+)\s+as\s+([A-Za-z0-9_$]+),\s*([A-Za-z0-9_$]+)\s+as\s+[A-Za-z0-9_$]+,\s*[A-Za-z0-9_$]+\s+as\s+[A-Za-z0-9_$]+\}from/);
+      if (paramMatch) {
+        const routeExport = paramMatch[1];
+        code =
+          `import{${routeExport} as s,B as uNav,r as R}from"./${entryFile}";` +
+          `function u(){const{ch:e}=s.useParams(),{s:t,cat:a,sport:o}=s.useSearch(),nav=uNav();` +
+          `return R.useEffect(()=>{nav({to:"/live-tv",replace:!0,search:{ch:e,s:t,cat:a,sport:o}})},[e,t,a,o,nav]),null}` +
+          `export{u as component};\n`;
+        modified = true;
+        console.log(`  [patched] Redirected ${filename} (/live-tv/$ch) -> /live-tv?ch=$ch`);
+        return { code, modified };
+      }
+    }
   }
 
   // 4. Patch cricket-*.js local Adsterra iframe component & sidebar ad box

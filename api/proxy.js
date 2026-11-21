@@ -32,8 +32,26 @@ export default async function handler(req, res) {
   }
 
   const reqUrl = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
-  const targetKey = reqUrl.searchParams.get('__target') || 'serverfn';
-  const rawSubPath = reqUrl.searchParams.get('__path') || '';
+
+  // Support BOTH direct Vercel rewrite path preservation (`/_edge/...`, `/_apihamyra/...`, `/_serverFn/...`)
+  // AND explicit query parameters (`?__target=edge&__path=...`) from `reqUrl.searchParams` or `req.query`.
+  let targetKey = reqUrl.searchParams.get('__target') || (typeof req.query?.__target === 'string' ? req.query.__target : '');
+  let rawSubPath = reqUrl.searchParams.get('__path') || (typeof req.query?.__path === 'string' ? req.query.__path : '');
+
+  if (reqUrl.pathname.startsWith('/_edge/') || reqUrl.pathname === '/_edge') {
+    targetKey = 'edge';
+    rawSubPath = reqUrl.pathname.slice('/_edge'.length).replace(/^\/+/, '');
+  } else if (reqUrl.pathname.startsWith('/_apihamyra/') || reqUrl.pathname === '/_apihamyra') {
+    targetKey = 'apihamyra';
+    rawSubPath = reqUrl.pathname.slice('/_apihamyra'.length).replace(/^\/+/, '');
+  } else if (reqUrl.pathname.startsWith('/_serverFn/') || reqUrl.pathname === '/_serverFn') {
+    targetKey = 'serverfn';
+    rawSubPath = reqUrl.pathname.slice('/_serverFn'.length).replace(/^\/+/, '');
+  }
+
+  if (!targetKey) {
+    targetKey = 'serverfn';
+  }
 
   const base = TARGETS[targetKey];
   if (!base) {
