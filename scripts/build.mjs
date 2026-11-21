@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import * as acorn from 'acorn';
 import { Impit } from 'impit';
 
 const execFileAsync = promisify(execFile);
@@ -83,176 +84,98 @@ async function checkCorsNeed(testUrl) {
   }
 }
 
-function extractBalancedBraceEnd(code, openBraceIdx) {
-  let depth = 0;
-  let state = 'code'; // 'code' | 'single' | 'double' | 'template' | 'regex' | 'regex_class' | 'line_comment' | 'block_comment'
-  const templateBraceStack = [];
-  let prevNonSpace = '{';
-
-  for (let i = openBraceIdx; i < code.length; i++) {
-    const ch = code[i];
-    const next = code[i + 1] || '';
-
-    if (state === 'line_comment') {
-      if (ch === '\n') state = 'code';
-      continue;
-    }
-    if (state === 'block_comment') {
-      if (ch === '*' && next === '/') {
-        state = 'code';
-        i++;
-      }
-      continue;
-    }
-    if (state === 'single') {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === "'") {
-        state = 'code';
-        prevNonSpace = "'";
-      }
-      continue;
-    }
-    if (state === 'double') {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === '"') {
-        state = 'code';
-        prevNonSpace = '"';
-      }
-      continue;
-    }
-    if (state === 'regex') {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === '[') {
-        state = 'regex_class';
-        continue;
-      }
-      if (ch === '/') {
-        state = 'code';
-        prevNonSpace = '/';
-      }
-      continue;
-    }
-    if (state === 'regex_class') {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === ']') {
-        state = 'regex';
-      }
-      continue;
-    }
-    if (state === 'template') {
-      if (ch === '\\') {
-        i++;
-        continue;
-      }
-      if (ch === '`') {
-        state = 'code';
-        prevNonSpace = '`';
-        continue;
-      }
-      if (ch === '$' && next === '{') {
-        templateBraceStack.push(depth);
-        depth++;
-        state = 'code';
-        prevNonSpace = '{';
-        i++;
-        continue;
-      }
-      continue;
-    }
-
-    // state === 'code'
-    if (ch === '/' && next === '/') {
-      state = 'line_comment';
-      i++;
-      continue;
-    }
-    if (ch === '/' && next === '*') {
-      state = 'block_comment';
-      i++;
-      continue;
-    }
-    if (ch === "'") {
-      state = 'single';
-      continue;
-    }
-    if (ch === '"') {
-      state = 'double';
-      continue;
-    }
-    if (ch === '`') {
-      state = 'template';
-      continue;
-    }
-    if (
-      ch === '/' &&
-      next !== '/' &&
-      next !== '*' &&
-      '=(,[!:?&|;{}~+-*%^<>'.includes(prevNonSpace)
+function parseTopLevelFunctions(code) {
+  const ast = acorn.parse(code, {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  });
+  const funcs = [];
+  for (const node of ast.body) {
+    if (node.type === 'FunctionDeclaration' && node.id) {
+      funcs.push(node);
+    } else if (
+      (node.type === 'ExportNamedDeclaration' || node.type === 'ExportDefaultDeclaration') &&
+      node.declaration &&
+      node.declaration.type === 'FunctionDeclaration' &&
+      node.declaration.id
     ) {
-      state = 'regex';
-      continue;
-    }
-
-    if (ch === '{') {
-      depth++;
-      prevNonSpace = '{';
-      continue;
-    }
-    if (ch === '}') {
-      depth--;
-      if (templateBraceStack.length > 0 && depth === templateBraceStack[templateBraceStack.length - 1]) {
-        templateBraceStack.pop();
-        state = 'template';
-        continue;
-      }
-      if (depth === 0) {
-        return i;
-      }
-      prevNonSpace = '}';
-      continue;
-    }
-
-    if (ch > ' ') {
-      prevNonSpace = ch;
+      funcs.push(node.declaration);
     }
   }
-  return -1;
+  return { ast, funcs };
 }
 
 function replaceFunctionBodyBySignature(code, sigRegex, newFnGenerator, label) {
-  const match = sigRegex.exec(code);
-  if (!match) {
-    console.warn(`  [patch-skip] Could not find signature for ${label}`);
-    return { code, patched: false };
+  let funcs;
+  try {
+    ({ funcs } = parseTopLevelFunctions(code));
+  } catch (err) {
+    console.error(`  [ast-error] Acorn failed before patching ${label}: ${err.message}`);
+    throw err;
   }
-  const startIdx = match.index;
-  const openBraceIdx = code.indexOf('{', startIdx + match[0].length - 1);
-  if (openBraceIdx === -1) {
-    console.warn(`  [patch-skip] Could not find opening brace for ${label}`);
-    return { code, patched: false };
+
+  for (const fnNode of funcs) {
+    const originalFn = code.slice(fnNode.start, fnNode.end);
+    const match = sigRegex.exec(originalFn);
+    if (match && match.index === 0) {
+      const replacementFn = newFnGenerator(match, originalFn, fnNode);
+      const updated = code.slice(0, fnNode.start) + replacementFn + code.slice(fnNode.end);
+      console.log(`  [patched] ${label} [${fnNode.id.name}] (${originalFn.length} -> ${replacementFn.length} chars)`);
+      return { code: updated, patched: true };
+    }
   }
-  const closeBraceIdx = extractBalancedBraceEnd(code, openBraceIdx);
-  if (closeBraceIdx === -1) {
-    console.warn(`  [patch-skip] Could not match balanced braces for ${label}`);
-    return { code, patched: false };
+
+  console.warn(`  [patch-skip] Could not find FunctionDeclaration matching ${label}`);
+  return { code, patched: false };
+}
+
+function replaceHydrateRootWithCreateRoot(code) {
+  const ast = acorn.parse(code, {
+    ecmaVersion: 'latest',
+    sourceType: 'module',
+  });
+
+  let foundCall = null;
+  function walk(node) {
+    if (!node || typeof node !== 'object' || foundCall) return;
+    if (
+      node.type === 'CallExpression' &&
+      node.callee &&
+      node.callee.type === 'MemberExpression' &&
+      !node.callee.computed &&
+      node.callee.property &&
+      node.callee.property.name === 'hydrateRoot' &&
+      node.arguments &&
+      node.arguments.length >= 2 &&
+      node.arguments[0].type === 'Identifier' &&
+      node.arguments[0].name === 'document'
+    ) {
+      foundCall = node;
+      return;
+    }
+    for (const key of Object.keys(node)) {
+      if (key === 'start' || key === 'end' || key === 'loc') continue;
+      const val = node[key];
+      if (Array.isArray(val)) {
+        for (const item of val) walk(item);
+      } else if (val && typeof val.type === 'string') {
+        walk(val);
+      }
+    }
   }
-  const originalFn = code.slice(startIdx, closeBraceIdx + 1);
-  const replacementFn = newFnGenerator(match, originalFn);
-  const updated = code.slice(0, startIdx) + replacementFn + code.slice(closeBraceIdx + 1);
-  console.log(`  [patched] ${label} (${originalFn.length} -> ${replacementFn.length} chars)`);
-  return { code: updated, patched: true };
+  walk(ast);
+
+  if (!foundCall) {
+    console.warn('  [patch-skip] Could not find hydrateRoot(document, ...) CallExpression');
+    return code;
+  }
+
+  const reactDomObj = code.slice(foundCall.callee.object.start, foundCall.callee.object.end);
+  const elementArg = foundCall.arguments[1];
+  const elementExpr = code.slice(elementArg.start, elementArg.end);
+  const replacement = `${reactDomObj}.createRoot(document.getElementById("app")||document.body).render(${elementExpr})`;
+  console.log(`  [patched] AST switched ${reactDomObj}.hydrateRoot(document, ...) -> createRoot(#app).render(...)`);
+  return code.slice(0, foundCall.start) + replacement + code.slice(foundCall.end);
 }
 
 function patchEntryChunk(rawCode) {
@@ -279,7 +202,7 @@ function patchEntryChunk(rawCode) {
 
   ({ code } = replaceFunctionBodyBySignature(
     code,
-    /function\s+([A-Za-z0-9_$]+)\(\)\{const [A-Za-z0-9_$]+=Date\.now\(\);try\{window\.localStorage\.setItem\([^)]+\)\}catch\{\}return [A-Za-z0-9_$]+\(\),window\.open\(/,
+    /function\s+([A-Za-z0-9_$]+)\(\)\{const [A-Za-z0-9_$]+=Date\.now\(\);try\{window\.localStorage\.setItem\(/,
     (m) => `function ${m[1]}(){return null}`,
     'Popup ad opener pA() -> null'
   ));
@@ -438,46 +361,7 @@ function patchEntryChunk(rawCode) {
   ));
 
   // Switch hydrateRoot(document, ...) -> createRoot(document.getElementById("app") || document.body).render(...)
-  const hydrateCallMatch = /([A-Za-z0-9_$]+)\.hydrateRoot\(\s*document\s*,/.exec(code);
-  if (hydrateCallMatch) {
-    const callStart = hydrateCallMatch.index;
-    const reactDomObj = hydrateCallMatch[1];
-    const openParenIdx = code.indexOf('(', callStart);
-    // Find balanced closing parenthesis of hydrateRoot(...)
-    let pDepth = 0;
-    let pEnd = -1;
-    let inStr = '';
-    for (let i = openParenIdx; i < code.length; i++) {
-      const ch = code[i];
-      if (inStr) {
-        if (ch === '\\') {
-          i++;
-          continue;
-        }
-        if (ch === inStr) inStr = '';
-        continue;
-      }
-      if (ch === '"' || ch === "'" || ch === '`') {
-        inStr = ch;
-        continue;
-      }
-      if (ch === '(') pDepth++;
-      else if (ch === ')') {
-        pDepth--;
-        if (pDepth === 0) {
-          pEnd = i;
-          break;
-        }
-      }
-    }
-    if (pEnd !== -1) {
-      const commaIdx = code.indexOf(',', openParenIdx);
-      const elementExpr = code.slice(commaIdx + 1, pEnd).trim();
-      const replacement = `${reactDomObj}.createRoot(document.getElementById("app")||document.body).render(${elementExpr})`;
-      code = code.slice(0, callStart) + replacement + code.slice(pEnd + 1);
-      console.log(`  [patched] Switched ${reactDomObj}.hydrateRoot(document, ...) -> createRoot(#app).render(...)`);
-    }
-  }
+  code = replaceHydrateRootWithCreateRoot(code);
 
   return code;
 }
@@ -818,26 +702,38 @@ async function main() {
         text = patched.code;
       }
 
-      // For CORS-restricted edge.hamyra.xyz JSON endpoints, route through our fast serverless proxy,
-      // EXCEPT direct media/binary/HLS endpoints (/bongo/hls, /bongo/live, /tmdb/hls, /tmdb/seg, /mlbd/stream, /download/apk)
-      // which stream directly into <video>/<a>/hls.js at full CDN speed without serverless buffering!
+      // For CORS-restricted edge.hamyra.xyz JSON endpoints, route through our fast serverless proxy using a full origin URL
+      // (`location.origin + "/api/edge"`) via AST StringLiteral/TemplateElement awareness so string quotes/templates never break
+      // and `new URL(...)` always receives a valid absolute URL!
+      // Direct media/binary/HLS endpoints (/bongo/hls, /bongo/live, /tmdb/hls, /tmdb/seg, /mlbd/stream, /download/apk)
+      // stay on direct `https://edge.hamyra.xyz/...` so <video>/<a>/hls.js stream at full CDN speed!
       if (needEdgeProxy) {
-        text = text.replace(
-          /https:\/\/edge\.hamyra\.xyz/g,
-          '/api/edge'
-        );
-        // Restore direct edge.hamyra.xyz origin on high-bandwidth binary/HLS media endpoints
+        // Protect direct high-bandwidth media endpoints built via `${var}/bongo/hls` etc.
         text = text.replace(
           /`\$\{([A-Za-z0-9_$]+)\}\/(bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)/g,
           '`https://edge.hamyra.xyz/$2'
         );
+        // Replace standalone string literal "https://edge.hamyra.xyz" -> runtime full-origin expression
         text = text.replace(
-          /\/api\/edge\/(bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)/g,
-          'https://edge.hamyra.xyz/$1'
+          /"https:\/\/edge\.hamyra\.xyz"/g,
+          '(typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz")'
+        );
+        // Replace quoted non-media prefixes "https://edge.hamyra.xyz/<path>"
+        text = text.replace(
+          /"https:\/\/edge\.hamyra\.xyz\/(?!bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)([^"]*)"/g,
+          '((typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz")+"/$1")'
+        );
+        // Replace template literal non-media prefixes `https://edge.hamyra.xyz/<path>`
+        text = text.replace(
+          /`https:\/\/edge\.hamyra\.xyz\/(?!bongo\/hls|bongo\/live|tmdb\/hls|tmdb\/seg|mlbd\/stream|download\/apk)/g,
+          '`${typeof location<"u"?location.origin+"/api/edge":"https://edge.hamyra.xyz"}/'
         );
       }
       if (needApiHamyraProxy) {
-        text = text.replace(/https:\/\/api\.hamyra\.xyz/g, '/api/apihamyra');
+        text = text.replace(
+          /"https:\/\/api\.hamyra\.xyz"/g,
+          '(typeof location<"u"?location.origin+"/api/apihamyra":"https://api.hamyra.xyz")'
+        );
       }
     }
 
