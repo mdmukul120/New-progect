@@ -1,6 +1,4 @@
-export const config = {
-  runtime: 'edge',
-};
+import { Impit } from 'impit';
 
 const TARGETS = {
   serverfn: 'https://www.hamyra.xyz/_serverFn',
@@ -16,97 +14,127 @@ const CORS_HEADERS = {
   'Access-Control-Max-Age': '86400',
 };
 
-export default async function handler(req) {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS });
+const browserClient = new Impit({
+  browser: 'chrome',
+  timeout: 25000,
+  followRedirects: true,
+});
+
+export default async function handler(req, res) {
+  for (const [k, v] of Object.entries(CORS_HEADERS)) {
+    res.setHeader(k, v);
   }
 
-  const reqUrl = new URL(req.url);
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+
+  const reqUrl = new URL(req.url, `https://${req.headers.host || 'localhost'}`);
   const targetKey = reqUrl.searchParams.get('__target') || 'serverfn';
-  const subPath = reqUrl.searchParams.get('__path') || '';
+  const rawSubPath = reqUrl.searchParams.get('__path') || '';
 
   const base = TARGETS[targetKey];
   if (!base) {
-    return new Response(JSON.stringify({ error: 'Unknown proxy target' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
-    });
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Unknown proxy target' }));
+    return;
   }
 
-  // Forward all original query parameters except internal __target and __path
+  // Forward all original query parameters except internal __target / __path / path (injected by Vercel rewrite)
   const forwardParams = new URLSearchParams();
   for (const [k, v] of reqUrl.searchParams.entries()) {
-    if (k !== '__target' && k !== '__path') {
+    if (k !== '__target' && k !== '__path' && !(k === 'path' && v === rawSubPath)) {
       forwardParams.append(k, v);
     }
   }
 
-  const cleanSubPath = subPath.replace(/^\/+/, '');
+  const cleanSubPath = rawSubPath.replace(/^\/+/, '');
   const upstreamUrlStr =
     `${base}${cleanSubPath ? '/' + cleanSubPath : ''}` +
     (forwardParams.toString() ? `?${forwardParams.toString()}` : '');
 
-  const forwardHeaders = new Headers();
+  const forwardHeaders = {
+    Origin: 'https://www.hamyra.xyz',
+    Referer: 'https://www.hamyra.xyz/',
+  };
+
   const passThroughHeaders = [
     'accept',
     'accept-language',
     'authorization',
     'content-type',
     'range',
-    'user-agent',
     'x-tsr-serverfn',
     'x-tsr-redirect',
   ];
 
   for (const h of passThroughHeaders) {
-    const val = req.headers.get(h);
-    if (val) forwardHeaders.set(h, val);
+    const val = req.headers[h];
+    if (typeof val === 'string' && val) {
+      forwardHeaders[h] = val;
+    }
   }
 
-  forwardHeaders.set('Origin', 'https://www.hamyra.xyz');
-  forwardHeaders.set('Referer', 'https://www.hamyra.xyz/');
-
-  const init = {
-    method: req.method,
-    headers: forwardHeaders,
-    redirect: 'follow',
-  };
-
+  let bodyBuf;
   if (req.method !== 'GET' && req.method !== 'HEAD') {
-    init.body = req.body;
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+    }
+    if (chunks.length > 0) {
+      bodyBuf = Buffer.concat(chunks);
+    }
   }
 
   try {
-    const upstreamRes = await fetch(upstreamUrlStr, init);
-    const outHeaders = new Headers(upstreamRes.headers);
-
-    // Strip hop-by-hop or conflicting security headers
-    outHeaders.delete('content-encoding');
-    outHeaders.delete('content-security-policy');
-    outHeaders.delete('x-frame-options');
-    outHeaders.delete('strict-transport-security');
-
-    for (const [k, v] of Object.entries(CORS_HEADERS)) {
-      outHeaders.set(k, v);
-    }
-
-    // Cache public GET serverFn / live-tv discovery responses briefly at Vercel Edge for instant speed
-    if (req.method === 'GET' && upstreamRes.status === 200 && targetKey === 'serverfn') {
-      outHeaders.set('Cache-Control', 'public, s-maxage=45, stale-while-revalidate=120');
-    }
-
-    return new Response(upstreamRes.body, {
-      status: upstreamRes.status,
-      statusText: upstreamRes.statusText,
-      headers: outHeaders,
+    const upstreamRes = await browserClient.fetch(upstreamUrlStr, {
+      method: req.method,
+      headers: forwardHeaders,
+      body: bodyBuf,
     });
-  } catch (err) {
-    return new Response(
-      JSON.stringify({ ok: false, error: err instanceof Error ? err.message : 'Upstream fetch failed' }),
-      {
-        status: 502,
-        headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+
+    res.statusCode = upstreamRes.status;
+
+    const skipHeaders = new Set([
+      'content-encoding',
+      'transfer-encoding',
+      'connection',
+      'keep-alive',
+      'content-security-policy',
+      'x-frame-options',
+      'strict-transport-security',
+      'access-control-allow-origin',
+      'access-control-allow-methods',
+      'access-control-allow-headers',
+      'access-control-expose-headers',
+    ]);
+
+    upstreamRes.headers.forEach((value, key) => {
+      const lower = key.toLowerCase();
+      if (!skipHeaders.has(lower)) {
+        res.setHeader(key, value);
       }
+    });
+
+    if (req.method === 'GET' && upstreamRes.status === 200 && targetKey === 'serverfn') {
+      res.setHeader('Cache-Control', 'public, s-maxage=45, stale-while-revalidate=120');
+    }
+
+    const arrayBuf = await upstreamRes.arrayBuffer();
+    const outBuffer = Buffer.from(arrayBuf);
+    res.setHeader('Content-Length', String(outBuffer.length));
+    res.end(outBuffer);
+  } catch (err) {
+    res.statusCode = 502;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(
+      JSON.stringify({
+        ok: false,
+        error: err instanceof Error ? err.message : 'Upstream fetch failed',
+      })
     );
   }
 }

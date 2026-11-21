@@ -2,10 +2,18 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { Impit } from 'impit';
 
 const execFileAsync = promisify(execFile);
 
+const impitClient = new Impit({
+  browser: 'chrome',
+  timeout: 30000,
+  followRedirects: true,
+});
+
 const UPSTREAM_ORIGIN = 'https://www.hamyra.xyz';
+const SNAPSHOT_HTML_PATH = path.resolve(process.cwd(), 'upstream/index.html');
 const DIST_DIR = path.resolve(process.cwd(), 'dist');
 const ASSETS_DIR = path.join(DIST_DIR, 'assets');
 const LOGOS_DIR = path.join(DIST_DIR, 'logos');
@@ -31,12 +39,10 @@ async function fetchWithRetry(url, options = {}, retries = 4) {
   let lastErr;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, {
+      const res = await impitClient.fetch(url, {
         ...options,
         headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          Accept: '*/*',
+          Referer: `${UPSTREAM_ORIGIN}/`,
           ...(options.headers || {}),
         },
       });
@@ -48,7 +54,7 @@ async function fetchWithRetry(url, options = {}, retries = 4) {
     } catch (err) {
       lastErr = err;
       if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, 350 * attempt));
+        await new Promise((r) => setTimeout(r, 400 * attempt));
       }
     }
   }
@@ -57,11 +63,11 @@ async function fetchWithRetry(url, options = {}, retries = 4) {
 
 async function checkCorsNeed(testUrl) {
   try {
-    const res = await fetch(testUrl, {
+    const res = await impitClient.fetch(testUrl, {
       method: 'GET',
       headers: {
-        Origin: 'https://hamyra-fast-adfree.vercel.app',
-        Referer: 'https://hamyra-fast-adfree.vercel.app/',
+        Origin: 'https://hamyra-adfree-fast.vercel.app',
+        Referer: 'https://hamyra-adfree-fast.vercel.app/',
         Accept: 'application/json',
       },
     });
@@ -631,11 +637,23 @@ async function main() {
   await fs.mkdir(ASSETS_DIR, { recursive: true });
   await fs.mkdir(LOGOS_DIR, { recursive: true });
 
-  // 1. Fetch upstream homepage HTML to auto-discover live entry JS & CSS hashes
-  console.log(`Fetching upstream HTML from ${UPSTREAM_ORIGIN}/ ...`);
-  const htmlRes = await fetchWithRetry(`${UPSTREAM_ORIGIN}/`);
-  if (!htmlRes) throw new Error('Failed to fetch upstream homepage HTML');
-  const upstreamHtml = await htmlRes.text();
+  // 1. Fetch upstream homepage HTML to auto-discover live entry JS & CSS hashes (with snapshot fallback)
+  let upstreamHtml = '';
+  try {
+    console.log(`Fetching upstream HTML from ${UPSTREAM_ORIGIN}/ via Impit Chrome TLS...`);
+    const htmlRes = await fetchWithRetry(`${UPSTREAM_ORIGIN}/`, {}, 2);
+    if (htmlRes) {
+      upstreamHtml = await htmlRes.text();
+      console.log(`Fetched live upstream HTML (${upstreamHtml.length} chars)`);
+    }
+  } catch (err) {
+    console.warn(`[warn] Live HTML fetch returned ${err.message}; falling back to bundled upstream/index.html snapshot`);
+  }
+
+  if (!upstreamHtml || !upstreamHtml.includes('/assets/index-')) {
+    upstreamHtml = await fs.readFile(SNAPSHOT_HTML_PATH, 'utf8');
+    console.log(`Loaded bundled snapshot upstream/index.html (${upstreamHtml.length} chars)`);
+  }
 
   const entryJsMatch = upstreamHtml.match(/\/assets\/(index-[A-Za-z0-9_-]+\.js)/);
   const entryCssMatch = upstreamHtml.match(/\/assets\/(styles-[A-Za-z0-9_-]+\.css)/);
@@ -733,29 +751,37 @@ async function main() {
 
   console.log(`Downloaded, patched & syntax-verified ${downloadedAssets.size} assets.`);
 
-  // 4. Download static root files & discovered /logos/*.png
+  // 4. Download static root files & discovered /logos/*.png (gracefully skipping any transient 403/404)
   await Promise.all(
     STATIC_ROOT_FILES.map(async (relPath) => {
-      const res = await fetchWithRetry(`${UPSTREAM_ORIGIN}${relPath}`);
-      if (!res) return;
-      const outPath = path.join(DIST_DIR, relPath.replace(/^\//, ''));
-      await fs.mkdir(path.dirname(outPath), { recursive: true });
-      if (relPath.endsWith('.webmanifest')) {
-        let manifestText = await res.text();
-        await fs.writeFile(outPath, manifestText, 'utf8');
-      } else {
-        const buf = Buffer.from(await res.arrayBuffer());
-        await fs.writeFile(outPath, buf);
+      try {
+        const res = await fetchWithRetry(`${UPSTREAM_ORIGIN}${relPath}`, {}, 2);
+        if (!res) return;
+        const outPath = path.join(DIST_DIR, relPath.replace(/^\//, ''));
+        await fs.mkdir(path.dirname(outPath), { recursive: true });
+        if (relPath.endsWith('.webmanifest')) {
+          const manifestText = await res.text();
+          await fs.writeFile(outPath, manifestText, 'utf8');
+        } else {
+          const buf = Buffer.from(await res.arrayBuffer());
+          await fs.writeFile(outPath, buf);
+        }
+      } catch (err) {
+        console.warn(`  [warn] Optional root static file skipped (${relPath}): ${err.message}`);
       }
     })
   );
 
   await Promise.all(
     Array.from(logoQueue).map(async (logoName) => {
-      const res = await fetchWithRetry(`${UPSTREAM_ORIGIN}/logos/${logoName}`);
-      if (!res) return;
-      const buf = Buffer.from(await res.arrayBuffer());
-      await fs.writeFile(path.join(LOGOS_DIR, logoName), buf);
+      try {
+        const res = await fetchWithRetry(`${UPSTREAM_ORIGIN}/logos/${logoName}`, {}, 2);
+        if (!res) return;
+        const buf = Buffer.from(await res.arrayBuffer());
+        await fs.writeFile(path.join(LOGOS_DIR, logoName), buf);
+      } catch (err) {
+        console.warn(`  [warn] Optional logo skipped (${logoName}): ${err.message}`);
+      }
     })
   );
   console.log(`Downloaded ${STATIC_ROOT_FILES.length} root static files and ${logoQueue.size} channel logos.`);
