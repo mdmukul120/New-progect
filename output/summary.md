@@ -3,8 +3,8 @@
 - মূল ZIP: `CRICFy_v7.4.3.zip`
 - মোট ফাইল (আনজিপের পর): **1501**
 - আনজিপ করা মোট সাইজ: **40,312,264 bytes**
-- মোট লিংক occurrence: **981**
-- ইউনিক লিংক: **69**
+- মোট লিংক occurrence: **979**
+- ইউনিক লিংক: **65**
 - ডোমেইন ক্যাটাগরি: **47**
 - টাইপ ক্যাটাগরি: **4**
 - উদ্দেশ্য ক্যাটাগরি: **6**
@@ -14,8 +14,8 @@
 | # | ক্যাটাগরি | লিংক সংখ্যা |
 |---|---|---|
 | 1 | 05_docs_library_license | 19 |
-| 2 | 01_app_backend_and_config | 16 |
-| 3 | 03_ads_analytics_tracking | 12 |
+| 2 | 03_ads_analytics_tracking | 12 |
+| 3 | 01_app_backend_and_config | 12 |
 | 4 | 04_xml_namespace_and_schema | 11 |
 | 5 | 02_streaming_and_media | 9 |
 | 6 | 06_other_web | 2 |
@@ -24,9 +24,9 @@
 
 | # | ডোমেইন | লিংক সংখ্যা |
 |---|---|---|
-| 1 | cashraven.io | 8 |
-| 2 | dashif.org | 4 |
-| 3 | schemas.android.com | 4 |
+| 1 | dashif.org | 4 |
+| 2 | schemas.android.com | 4 |
+| 3 | cashraven.io | 4 |
 | 4 | apache.org | 2 |
 | 5 | app-measurement.com | 2 |
 | 6 | developer.android.com | 2 |
@@ -76,7 +76,7 @@
 
 | # | টাইপ | লিংক সংখ্যা |
 |---|---|---|
-| 1 | other_http | 44 |
+| 1 | other_http | 40 |
 | 2 | web_page | 22 |
 | 3 | txt | 2 |
 | 4 | php_endpoint | 1 |
@@ -103,14 +103,10 @@
 - https://aomedia.org/emsg/ID3
 - https://app-measurement.com/a
 - https://app-measurement.com/s/d
-- https://cashraven.io/legal/eula&amp;&quot;http://bstrongiemuastruct
+- https://cashraven.io/legal/eula
 - https://cashraven.io/legal/eulacreatecr_androidcreate_brandedcreate_headlesscreate_with_brandingversionapp_idapply_consent_configauth_stateauth_statusautostart_enabledautostart_supportedbattery
 - https://cashraven.io/legal/privacy
 - https://cashraven.io/legal/terms-of-use
-- https://cashraven.io/legal/terms-of-usehttps://cashraven.io/legal/privacyhttps://cashraven.io/legal/eula&amp;&quot;bstrongiemua
-- https://cashraven.io/legal/terms-of-usehttps://cashraven.io/legal/privacyhttps://cashraven.io/legal/eula&amp;&quot;bstrongiemuastruct
-- https://cashraven.io/legal/terms-of-usehttps://cashraven.io/legal/privacyhttps://cashraven.io/legal/eulacreatecr_androidcreate_brandedcreate_headlesscreate_with_brandingversionapp_idapply_consent_configauth_stateauth_statusautostart_enabledautostart_supportedbatteryclear_listenerconsent_config_versionconsent_screenconsent_statusconsent_textconsent_themedevice_id
-- https://cashraven.io/legal/terms-of-usehttps://cashraven.io/legal/privacyhttps://cashraven.io/legal/eulacreatecr_androidcreate_brandedcreate_headlesscreate_with_brandingversionapp_idapply_consent_configauth_stateauth_statusautostart_enabledautostart_supportedbatteryclear_listenerconsent_config_versionconsent_screenconsent_statusconsent_textconsent_themedevice_idevent_seqevents_sincehas_consent_decisionis_opted_inis_pausedis_runningis_serving_allowedlast_errormetricsopt_inopt_outpausereport_batteryreport_networkrequest_cash_out_detailedresumeserving_statusset_app_idset_autostartset_enabledset_listenerstart
 - https://cfygsjsgdj141.top/
 - https://cloud.google.com/apis/design/glossary
 - https://default.url

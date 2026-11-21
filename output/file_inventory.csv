@@ -258,7 +258,7 @@ CRICFy_v7.4 (3)/kotlin/ranges/ranges.kotlin_builtins,4353,.kotlin_builtins,0
 CRICFy_v7.4 (3)/kotlin/reflect/reflect.kotlin_builtins,4859,.kotlin_builtins,0
 CRICFy_v7.4 (3)/l/l.xml,452,.xml,1
 CRICFy_v7.4 (3)/lib/arm64-v8a/libandroidx.graphics.path.so,10096,.so,1
-CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so,1753336,.so,4
+CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so,1753336,.so,3
 CRICFy_v7.4 (3)/lib/arm64-v8a/libdatastore_shared_counter.so,7112,.so,1
 CRICFy_v7.4 (3)/lib/arm64-v8a/libdav1dJNI.so,1094800,.so,1
 CRICFy_v7.4 (3)/lib/arm64-v8a/libffmpegJNI.so,1718968,.so,2
@@ -284,7 +284,7 @@ CRICFy_v7.4 (3)/lib/x86/libjnidispatch.so,112108,.so,0
 CRICFy_v7.4 (3)/lib/x86/libnative-lib.so,826652,.so,1
 CRICFy_v7.4 (3)/lib/x86/libunitycoherencenative.so,542920,.so,1
 CRICFy_v7.4 (3)/lib/x86_64/libandroidx.graphics.path.so,10760,.so,1
-CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so,1934880,.so,4
+CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so,1934880,.so,3
 CRICFy_v7.4 (3)/lib/x86_64/libdatastore_shared_counter.so,6224,.so,1
 CRICFy_v7.4 (3)/lib/x86_64/libdav1dJNI.so,1982888,.so,1
 CRICFy_v7.4 (3)/lib/x86_64/libffmpegJNI.so,1838240,.so,2

@@ -1,5 +1,5 @@
 files: 1501
-unique_links: 69
+unique_links: 65
 domains: 47
 types: 4
 categories: 6
@@ -263,7 +263,7 @@ categories: 6
         4859  .kotlin_builtins links=0     CRICFy_v7.4 (3)/kotlin/reflect/reflect.kotlin_builtins
          452  .xml       links=1     CRICFy_v7.4 (3)/l/l.xml
        10096  .so        links=1     CRICFy_v7.4 (3)/lib/arm64-v8a/libandroidx.graphics.path.so
-     1753336  .so        links=4     CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so
+     1753336  .so        links=3     CRICFy_v7.4 (3)/lib/arm64-v8a/libcr_android.so
         7112  .so        links=1     CRICFy_v7.4 (3)/lib/arm64-v8a/libdatastore_shared_counter.so
      1094800  .so        links=1     CRICFy_v7.4 (3)/lib/arm64-v8a/libdav1dJNI.so
      1718968  .so        links=2     CRICFy_v7.4 (3)/lib/arm64-v8a/libffmpegJNI.so
@@ -289,7 +289,7 @@ categories: 6
       826652  .so        links=1     CRICFy_v7.4 (3)/lib/x86/libnative-lib.so
       542920  .so        links=1     CRICFy_v7.4 (3)/lib/x86/libunitycoherencenative.so
        10760  .so        links=1     CRICFy_v7.4 (3)/lib/x86_64/libandroidx.graphics.path.so
-     1934880  .so        links=4     CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so
+     1934880  .so        links=3     CRICFy_v7.4 (3)/lib/x86_64/libcr_android.so
         6224  .so        links=1     CRICFy_v7.4 (3)/lib/x86_64/libdatastore_shared_counter.so
      1982888  .so        links=1     CRICFy_v7.4 (3)/lib/x86_64/libdav1dJNI.so
      1838240  .so        links=2     CRICFy_v7.4 (3)/lib/x86_64/libffmpegJNI.so
