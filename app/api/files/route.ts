@@ -1,6 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { requireAuth } from '@/lib/auth';
-import { store, normalizeFilePath, isValidSiteName, isTextFile, mimeFor } from '@/lib/store';
+import {
+  store,
+  normalizeFilePath,
+  isValidSiteName,
+  isTextFile,
+  mimeFor,
+  friendlyStorageError,
+} from '@/lib/store';
 
 export const runtime = 'nodejs';
 
@@ -66,13 +73,6 @@ export async function PUT(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-export function friendlyStorageError(e: Error): string {
-  const msg = e?.message || 'সেভ ব্যর্থ';
-  if (/EROFS|read-only file system|ENOENT: no such file/i.test(msg)) {
-    return 'এই হোস্টে লোকাল ডিস্ক read-only — Supabase স্টোরেজ সেট করুন (STORAGE_DRIVER=supabase)।';
-  }
-  return msg;
-}
 
 export async function DELETE(req: NextRequest) {
   try {

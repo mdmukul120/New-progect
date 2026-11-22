@@ -374,6 +374,14 @@ export function store(): Driver {
   return cached;
 }
 
+export function friendlyStorageError(e: Error): string {
+  const msg = e?.message || 'সেভ ব্যর্থ';
+  if (/EROFS|read-only file system|ENOENT: no such file|permission denied/i.test(msg)) {
+    return 'এই হোস্টে লোকাল ডিস্ক read-only — Supabase স্টোরেজ সেট করুন (STORAGE_DRIVER=supabase)।';
+  }
+  return msg;
+}
+
 export const LIMITS = {
   maxSites: MAX_SITES,
   maxFilesPerSite: MAX_FILES_PER_SITE,
