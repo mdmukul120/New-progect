@@ -148,7 +148,8 @@ require ${phpString(path.join(DOCROOT, 'index.php'))};
       relativeUri: req.url,
       method: req.method,
       headers: { ...req.headers, host: req.headers.host || `localhost:${PORT}` },
-      body,
+      // php-wasm wants bytes, not a string, for the request body.
+      body: new TextEncoder().encode(body),
     });
     const text = typeof result === 'string' ? result : (result.text ?? '');
 
