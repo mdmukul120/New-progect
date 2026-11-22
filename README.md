@@ -73,3 +73,8 @@ Vercel → Settings → Domains → Refresh → "Valid Configuration" দেখ�
 | `sitehub.asf.run` ✅ যোগ হয়েছে | `_vercel.asf.run` → `vc-domain-verify=sitehub.asf.run,bead3624a4af3a14dae8` (ready.bd সাপোর্ট লাগবে) | `sitehub` → `6f224acf017ea0bd.vercel-dns-017.com.` |
 | `mukul.asf.sale` ✅ যোগ হয়েছে | `_vercel.asf.sale` → `vc-domain-verify=mukul.asf.sale,59367828019b7dda4a4b` | `mukul` → `6f224acf017ea0bd.vercel-dns-017.com.` |
 | `মুকুল.পাতা.বাংলা` | `_vercel.পাতা.বাংলা` → `vc-domain-verify=xn--p5b3cn2db.xn--45bl4db.xn--54b7fta0cc,855a1cf26df5bc3a1a3c` | `মুকুল` → `cname.vercel-dns.com.` |
+
+### `মুকুল.বাংলা.পাতা` (verified, no TXT needed)
+- punycode: `xn--p5b3cn2db.xn--54b7fta0cc.xn--45bl4db`
+- CNAME: name `মুকুল` (or `xn--p5b3cn2db`) → `6f224acf017ea0bd.vercel-dns-017.com.`
+- TXT: **লাগবে না** (Vercel: verified=true)
