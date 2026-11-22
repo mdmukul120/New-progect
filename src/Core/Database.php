@@ -214,14 +214,16 @@ final class Database
             implode(', ', $columns),
             implode(', ', $placeholders)
         );
+        // Postgres has no lastInsertId() for BIGSERIAL, so ask for the value
+        // back explicitly. Other drivers keep their native behaviour.
+        if ($this->driver() === 'pgsql') {
+            $value = $this->run($sql . ' RETURNING id', $this->bindings($data))->fetchColumn();
+            return $value === false ? 0 : (int) $value;
+        }
+
         $this->run($sql, $this->bindings($data));
         $last = $this->pdo->lastInsertId();
-        if ($last !== false && (string) $last !== '' && (int) $last > 0) {
-            return (int) $last;
-        }
-        // Postgres only exposes the serial value via RETURNING, so a table
-        // without a sequence-backed primary key falls back to 0 here.
-        return 0;
+        return $last === false ? 0 : (int) $last;
     }
 
     /**

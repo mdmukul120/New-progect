@@ -84,6 +84,16 @@ final class Installer
     }
 
 
+    /**
+     * Import the captured catalogue.
+     *
+     * Every table is written with ONE multi-row statement instead of one
+     * statement per row: the production database lives in another region, so
+     * ~1,800 round trips would blow past a serverless request timeout while
+     * ~15 batched statements take well under a second.
+     *
+     * @return array<string,int>
+     */
     public static function seed(): array
     {
         $db = Database::instance();
@@ -91,151 +101,234 @@ final class Installer
         $data = require MLBD_ROOT . '/database/seed.php';
 
         $counts = ['titles' => 0, 'genres' => 0, 'collections' => 0, 'ott' => 0, 'notices' => 0, 'pages' => 0];
+        $now = date('Y-m-d H:i:s');
 
         $db->begin();
         try {
-            // --- genres
+            // --- genres -------------------------------------------------
+            $genres = [];
             foreach ($data['genres'] as $genre) {
-                $existing = $db->scalar('SELECT id FROM genres WHERE slug = :s', ['s' => $genre['slug']]);
-                if ($existing === null) {
-                    $db->insert('genres', ['slug' => $genre['slug'], 'name' => $genre['name'], 'icon' => $genre['icon']]);
-                    $counts['genres']++;
-                } else {
-                    $db->update('genres', ['name' => $genre['name'], 'icon' => $genre['icon']], ['id' => (int) $existing]);
-                }
+                $genres[] = ['slug' => $genre['slug'], 'name' => $genre['name'], 'icon' => $genre['icon']];
             }
+            $genreColumns = ['slug', 'name', 'icon'];
+            self::runBatch($db, self::upsertSql($db, 'genres', $genreColumns, count($genres), '(slug)'), $genres, $genreColumns);
+            $counts['genres'] = count($genres);
 
-            // --- ott
+            // --- ott platforms ------------------------------------------
+            $ott = [];
             foreach ($data['ott'] as $index => $platform) {
-                $existing = $db->scalar('SELECT id FROM ott_platforms WHERE slug = :s', ['s' => $platform['slug']]);
-                $row = ['slug' => $platform['slug'], 'name' => $platform['name'], 'logo' => $platform['logo'], 'sort' => $index];
-                if ($existing === null) {
-                    $db->insert('ott_platforms', $row);
-                    $counts['ott']++;
-                } else {
-                    $db->update('ott_platforms', $row, ['id' => (int) $existing]);
-                }
+                $ott[] = [
+                    'slug' => $platform['slug'],
+                    'name' => $platform['name'],
+                    'logo' => $platform['logo'],
+                    'sort' => $index,
+                ];
             }
+            $ottColumns = ['slug', 'name', 'logo', 'sort'];
+            self::runBatch($db, self::upsertSql($db, 'ott_platforms', $ottColumns, count($ott), '(slug)'), $ott, $ottColumns);
+            $counts['ott'] = count($ott);
 
-            // --- collections
-            $collectionIds = [];
+            // --- collections --------------------------------------------
+            $collections = [];
             foreach ($data['collections'] as $index => $collection) {
-                $existing = $db->scalar('SELECT id FROM collections WHERE slug = :s', ['s' => $collection['slug']]);
-                if ($existing === null) {
-                    $collectionIds[$collection['slug']] = $db->insert('collections', [
-                        'slug' => $collection['slug'],
-                        'name' => $collection['name'],
-                        'description' => $collection['description'],
-                        'keywords' => self::collectionTokens($collection['keywords'] ?? []),
-                        'sort' => $index,
-                    ]);
-                    $counts['collections']++;
-                } else {
-                    $db->update('collections', [
-                        'name' => $collection['name'],
-                        'description' => $collection['description'],
-                        'keywords' => self::collectionTokens($collection['keywords'] ?? []),
-                        'sort' => $index,
-                    ], ['id' => (int) $existing]);
-                    $collectionIds[$collection['slug']] = (int) $existing;
-                }
+                $collections[] = [
+                    'slug' => $collection['slug'],
+                    'name' => $collection['name'],
+                    'description' => $collection['description'],
+                    'keywords' => self::collectionTokens($collection['keywords'] ?? []),
+                    'sort' => $index,
+                ];
             }
+            $collectionColumns = ['slug', 'name', 'description', 'keywords', 'sort'];
+            self::runBatch(
+                $db,
+                self::upsertSql($db, 'collections', $collectionColumns, count($collections), '(slug)'),
+                $collections,
+                $collectionColumns
+            );
+            $counts['collections'] = count($collections);
 
-            // --- titles (+ genres, links, episodes)
+            // --- titles -------------------------------------------------
+            $titles = [];
+            $genreSlugsByTitle = [];
+            $linkRowsByTitle = [];
+            $episodesByTitle = [];
+
             foreach ($data['titles'] as $title) {
-                $genres = $title['genres'];
+                $genreSlugsByTitle[$title['slug']] = $title['genres'];
                 unset($title['genres']);
-                $slug = $title['slug'];
+                $title['created_at'] = $now;
+                $title['updated_at'] = $now;
+                $titles[] = $title;
 
-                $existing = $db->scalar('SELECT id FROM titles WHERE slug = :s', ['s' => $slug]);
-                $row = $title;
-                if ($existing === null) {
-                    $titleId = $db->insert('titles', $row);
-                    $counts['titles']++;
-                } else {
-                    $titleId = (int) $existing;
-                    $db->update('titles', $row, ['id' => $titleId]);
-                }
-
-                foreach ($genres as $genreSlug) {
-                    $genreId = $db->scalar('SELECT id FROM genres WHERE slug = :s', ['s' => $genreSlug]);
-                    if ($genreId === null) {
-                        continue;
-                    }
-                    $db->run(
-                        self::insertIgnore($db, 'title_genres', '(title_id, genre_id)', 'VALUES (:t, :g)', '(title_id, genre_id)'),
-                        ['t' => $titleId, 'g' => (int) $genreId]
-                    );
-                }
-
-                self::seedLinks($db, $titleId, $title);
-
-                if (!empty($title['ep_label'])) {
-                    (new TitleRepository($db))->syncEpisodes($titleId, (string) $title['ep_label']);
-                }
+                $linkRowsByTitle[$title['slug']] = self::downloadVariants($title);
+                $episodesByTitle[$title['slug']] = self::episodeNumbers((string) ($title['ep_label'] ?? ''));
             }
 
-            // --- map collections by keyword
-            if ($data['collections'] !== []) {
-                $db->run('DELETE FROM collection_items');
-                foreach ($data['collections'] as $collection) {
-                    $collectionId = $collectionIds[$collection['slug']] ?? null;
-                    if ($collectionId === null) {
-                        continue;
+            $titleColumns = array_keys($titles[0]);
+            self::runBatch(
+                $db,
+                self::upsertSql($db, 'titles', $titleColumns, count($titles), '(slug)', ['created_at']),
+                $titles,
+                $titleColumns
+            );
+            $counts['titles'] = count($titles);
+
+            $titleIds = [];
+            foreach ($db->all('SELECT id, slug FROM titles') as $row) {
+                $titleIds[(string) $row['slug']] = (int) $row['id'];
+            }
+            $genreIds = [];
+            foreach ($db->all('SELECT id, slug FROM genres') as $row) {
+                $genreIds[(string) $row['slug']] = (int) $row['id'];
+            }
+
+            // --- title <-> genre pairs ----------------------------------
+            $pairs = [];
+            foreach ($genreSlugsByTitle as $slug => $slugs) {
+                $titleId = $titleIds[$slug] ?? null;
+                if ($titleId === null) {
+                    continue;
+                }
+                foreach ($slugs as $genreSlug) {
+                    if (isset($genreIds[$genreSlug])) {
+                        $pairs[] = ['title_id' => $titleId, 'genre_id' => $genreIds[$genreSlug]];
                     }
-                    $rows = $db->all('SELECT id, title, language, type FROM titles');
-                    $sort = 0;
-                    foreach ($rows as $row) {
-                        $haystack = strtolower((string) $row['title'] . ' ' . (string) $row['language'] . ' ' . (string) $row['type']);
-                        foreach ($collection['keywords'] as $keyword) {
-                            if ($keyword !== '' && str_contains($haystack, strtolower((string) $keyword))) {
-                                $db->run(
-                                    self::insertIgnore(
-                                        $db,
-                                        'collection_items',
-                                        '(collection_id, title_id, sort)',
-                                        'VALUES (:c, :t, :s)',
-                                        '(collection_id, title_id)'
-                                    ),
-                                    ['c' => $collectionId, 't' => (int) $row['id'], 's' => $sort++]
-                                );
-                                break;
-                            }
+                }
+            }
+            $pairColumns = ['title_id', 'genre_id'];
+            self::runBatch(
+                $db,
+                self::upsertSql($db, 'title_genres', $pairColumns, count($pairs), '(title_id, genre_id)'),
+                $pairs,
+                $pairColumns
+            );
+
+            // --- download links (only for titles that have none) --------
+            $withLinks = [];
+            foreach ($db->all('SELECT DISTINCT title_id FROM download_links') as $row) {
+                $withLinks[(int) $row['title_id']] = true;
+            }
+            $links = [];
+            foreach ($linkRowsByTitle as $slug => $rows) {
+                $titleId = $titleIds[$slug] ?? null;
+                if ($titleId === null || isset($withLinks[$titleId])) {
+                    continue;
+                }
+                foreach ($rows as $row) {
+                    $links[] = ['title_id' => $titleId] + $row;
+                }
+            }
+            $linkColumns = ['title_id', 'label', 'quality', 'size', 'url', 'sort'];
+            self::runBatch($db, self::insertSql('download_links', $linkColumns, count($links)), $links, $linkColumns);
+
+            // --- episodes ----------------------------------------------
+            $episodes = [];
+            foreach ($episodesByTitle as $slug => $seasons) {
+                $titleId = $titleIds[$slug] ?? null;
+                if ($titleId === null) {
+                    continue;
+                }
+                foreach ($seasons as $season => $numbers) {
+                    foreach ($numbers as $episode) {
+                        $episodes[] = [
+                            'title_id' => $titleId,
+                            'season' => $season,
+                            'episode' => $episode,
+                            'name' => 'Episode ' . $episode,
+                        ];
+                    }
+                }
+            }
+            $episodeColumns = ['title_id', 'season', 'episode', 'name'];
+            self::runBatch(
+                $db,
+                self::upsertSql($db, 'episodes', $episodeColumns, count($episodes), '(title_id, season, episode)'),
+                $episodes,
+                $episodeColumns
+            );
+
+            // --- collection membership, matched on keywords -------------
+            $db->run('DELETE FROM collection_items');
+            $collectionIds = [];
+            foreach ($db->all('SELECT id, slug FROM collections') as $row) {
+                $collectionIds[(string) $row['slug']] = (int) $row['id'];
+            }
+            $catalogue = $db->all('SELECT id, title, language, type FROM titles');
+            $items = [];
+            foreach ($data['collections'] as $collection) {
+                $collectionId = $collectionIds[$collection['slug']] ?? null;
+                if ($collectionId === null) {
+                    continue;
+                }
+                $keywords = array_values(array_filter(array_map(
+                    static fn ($keyword): string => strtolower(trim((string) $keyword)),
+                    $collection['keywords'] ?? []
+                ), static fn (string $keyword): bool => $keyword !== ''));
+                if ($keywords === []) {
+                    continue;
+                }
+                $sort = 0;
+                foreach ($catalogue as $item) {
+                    $haystack = strtolower((string) $item['title'] . ' ' . (string) $item['language'] . ' ' . (string) $item['type']);
+                    foreach ($keywords as $keyword) {
+                        if (str_contains($haystack, $keyword)) {
+                            $items[] = ['collection_id' => $collectionId, 'title_id' => (int) $item['id'], 'sort' => $sort++];
+                            break;
                         }
                     }
                 }
             }
+            $itemColumns = ['collection_id', 'title_id', 'sort'];
+            self::runBatch(
+                $db,
+                self::upsertSql($db, 'collection_items', $itemColumns, count($items), '(collection_id, title_id)'),
+                $items,
+                $itemColumns
+            );
 
-            // --- notices
-            if ($data['notices'] !== []) {
-                $db->run('DELETE FROM notices');
-                foreach ($data['notices'] as $index => $notice) {
-                    $db->insert('notices', [
-                        'message' => $notice['message'],
-                        'style' => $notice['style'],
-                        'color' => $notice['color'],
-                        'active' => 1,
-                        'sort' => $index,
-                    ]);
-                    $counts['notices']++;
-                }
+            // --- notices ------------------------------------------------
+            $db->run('DELETE FROM notices');
+            $notices = [];
+            foreach ($data['notices'] as $index => $notice) {
+                $notices[] = [
+                    'message' => $notice['message'],
+                    'style' => $notice['style'],
+                    'color' => $notice['color'],
+                    'active' => 1,
+                    'sort' => $index,
+                ];
             }
+            $noticeColumns = ['message', 'style', 'color', 'active', 'sort'];
+            self::runBatch($db, self::insertSql('notices', $noticeColumns, count($notices)), $notices, $noticeColumns);
+            $counts['notices'] = count($notices);
 
-            // --- pages
+            // --- pages --------------------------------------------------
+            $pages = [];
             foreach ($data['pages'] as $page) {
-                $existing = $db->scalar('SELECT id FROM pages WHERE slug = :s', ['s' => $page['slug']]);
-                if ($existing === null) {
-                    $db->insert('pages', ['slug' => $page['slug'], 'title' => $page['title'], 'body' => $page['body']]);
-                    $counts['pages']++;
-                }
+                $pages[] = [
+                    'slug' => $page['slug'],
+                    'title' => $page['title'],
+                    'body' => $page['body'],
+                    'updated_at' => $now,
+                ];
             }
+            $pageColumns = ['slug', 'title', 'body', 'updated_at'];
+            self::runBatch(
+                $db,
+                self::upsertSql($db, 'pages', $pageColumns, count($pages), '(slug)'),
+                $pages,
+                $pageColumns
+            );
+            $counts['pages'] = count($pages);
 
-            // --- api endpoints registry
+            // --- api endpoint registry ----------------------------------
             $endpoints = require MLBD_ROOT . '/database/endpoints.php';
             $db->run('DELETE FROM api_endpoints');
+            $endpointRows = [];
             foreach ($endpoints as $index => $endpoint) {
                 [$method, $path, $category, $summary, $params, $sample] = $endpoint;
-                $db->insert('api_endpoints', [
+                $endpointRows[] = [
                     'method' => $method,
                     'path' => $path,
                     'category' => $category,
@@ -244,10 +337,11 @@ final class Installer
                     'sample' => $sample,
                     'is_public' => 1,
                     'sort' => $index,
-                ]);
+                ];
             }
-
-            $counts['endpoints'] = count($endpoints);
+            $endpointColumns = ['method', 'path', 'category', 'summary', 'params', 'sample', 'is_public', 'sort'];
+            self::runBatch($db, self::insertSql('api_endpoints', $endpointColumns, count($endpointRows)), $endpointRows, $endpointColumns);
+            $counts['endpoints'] = count($endpointRows);
 
             $db->commit();
         } catch (Throwable $e) {
@@ -258,11 +352,122 @@ final class Installer
         return $counts;
     }
 
-
-/** Dialect-neutral "insert, skip duplicates" statement. */
-    private static function insertIgnore(Database $db, string $table, string $columns, string $values, string $conflict): string
+    /** Multi-row VALUES list with ":column_0" style placeholders. */
+    private static function insertSql(string $table, array $columns, int $rowCount): string
     {
-        return $db->insertIgnore($table, $columns, $values, $conflict);
+        $groups = [];
+        for ($i = 0; $i < $rowCount; $i++) {
+            $groups[] = '(' . implode(', ', array_map(
+                static fn (string $column): string => ':' . $column . '_' . $i,
+                $columns
+            )) . ')';
+        }
+        return 'INSERT INTO ' . $table . ' (' . implode(', ', $columns) . ') VALUES ' . implode(', ', $groups);
+    }
+
+    /**
+     * Multi-row "insert or update the row that already has this key" statement
+     * for the active dialect: Postgres/SQLite use ON CONFLICT, MySQL uses
+     * ON DUPLICATE KEY UPDATE.
+     *
+     * @param array<int,string> $columns
+     * @param array<int,string> $preserve columns that must never be overwritten
+     */
+    private static function upsertSql(
+        Database $db,
+        string $table,
+        array $columns,
+        int $rowCount,
+        string $conflictTarget,
+        array $preserve = []
+    ): string {
+        $sql = self::insertSql($table, $columns, $rowCount);
+        $assignable = array_values(array_filter($columns, static fn (string $c): bool => !in_array($c, $preserve, true)));
+
+        if ($assignable === []) {
+            return $db->driver() === 'mysql' ? $sql : $sql . ' ON CONFLICT ' . $conflictTarget . ' DO NOTHING';
+        }
+
+        if ($db->driver() === 'mysql') {
+            return $sql . ' ON DUPLICATE KEY UPDATE ' . implode(', ', array_map(
+                static fn (string $column): string => $column . ' = VALUES(' . $column . ')',
+                $assignable
+            ));
+        }
+
+        return $sql . ' ON CONFLICT ' . $conflictTarget . ' DO UPDATE SET ' . implode(', ', array_map(
+            static fn (string $column): string => $column . ' = excluded.' . $column,
+            $assignable
+        ));
+    }
+
+    /**
+     * Run one batched statement with flattened bindings.
+     *
+     * @param array<int,array<string,mixed>> $rows
+     * @param array<int,string> $columns
+     */
+    private static function runBatch(Database $db, string $sql, array $rows, array $columns): void
+    {
+        if ($rows === []) {
+            return;
+        }
+        $bindings = [];
+        foreach ($rows as $index => $row) {
+            foreach ($columns as $column) {
+                $bindings[$column . '_' . $index] = $row[$column] ?? null;
+            }
+        }
+        $db->run($sql, $bindings);
+    }
+
+    /** The four mirror rows every title gets. */
+    private static function downloadVariants(array $title): array
+    {
+        $quality = $title['quality'] ?: 'WEB-DL';
+        $base = 'https://movielinkbd.tv/dl/' . rawurlencode((string) $title['slug']);
+        $variants = [
+            ['480p HEVC', '480p', '~320 MB'],
+            ['720p HEVC', '720p', '~720 MB'],
+            ['1080p HEVC', '1080p', '~1.4 GB'],
+            ['1080p x264', '1080p', '~2.1 GB'],
+        ];
+        $rows = [];
+        foreach ($variants as $index => [$label, $q, $size]) {
+            $rows[] = [
+                'label' => $label . ' · ' . $quality,
+                'quality' => $q,
+                'size' => $size,
+                'url' => $base . '?q=' . $q . '&src=web',
+                'sort' => $index,
+            ];
+        }
+        return $rows;
+    }
+
+    /**
+     * Episode numbers per season, mirroring TitleRepository::syncEpisodes().
+     *
+     * @return array<int,array<int,int>>
+     */
+    private static function episodeNumbers(string $label): array
+    {
+        if ($label === '') {
+            return [];
+        }
+        $season = 1;
+        if (preg_match('~S(\d{1,2})~i', $label, $seasonMatch)) {
+            $season = (int) $seasonMatch[1];
+        }
+        if (preg_match('~Ep\.?\s*(\d{1,3})\s*-\s*(\d{1,3})~i', $label, $range)) {
+            $from = (int) $range[1];
+            $to = min((int) $range[2], $from + 199);
+            return $from <= $to ? [$season => range($from, $to)] : [];
+        }
+        if (preg_match('~Ep\.?\s*(\d{1,3})~i', $label, $single)) {
+            return [$season => [(int) $single[1]]];
+        }
+        return [];
     }
 
 /**
@@ -289,33 +494,6 @@ final class Installer
         $tokens = array_values(array_unique(array_filter($tokens)));
         return $tokens === [] ? '' : '|' . implode('|', $tokens) . '|';
     }
-
-    private static function seedLinks(Database $db, int $titleId, array $title): void
-    {
-        $existing = (int) $db->scalar('SELECT COUNT(*) FROM download_links WHERE title_id = :id', ['id' => $titleId]);
-        if ($existing > 0) {
-            return;
-        }
-        $quality = $title['quality'] ?: 'WEB-DL';
-        $base = 'https://movielinkbd.tv/dl/' . rawurlencode((string) $title['slug']);
-        $variants = [
-            ['480p HEVC', '480p', '~320 MB'],
-            ['720p HEVC', '720p', '~720 MB'],
-            ['1080p HEVC', '1080p', '~1.4 GB'],
-            ['1080p x264', '1080p', '~2.1 GB'],
-        ];
-        foreach ($variants as $index => [$label, $q, $size]) {
-            $db->insert('download_links', [
-                'title_id' => $titleId,
-                'label' => $label . ' · ' . $quality,
-                'quality' => $q,
-                'size' => $size,
-                'url' => $base . '?q=' . $q . '&src=web',
-                'sort' => $index,
-            ]);
-        }
-    }
-
 
     private static function splitStatements(string $sql): array
     {

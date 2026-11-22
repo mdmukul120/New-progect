@@ -334,6 +334,8 @@ final class TitleRepository
         }
 
         $inserted = 0;
+        // The name column must be in the column list, otherwise the fourth
+        // placeholder has nowhere to go (Postgres rejects it outright).
         $verb = $this->db->insertIgnore(
             'episodes',
             '(title_id, season, episode, name)',
