@@ -1,0 +1,33 @@
+{
+  "name": "sitehub",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@codemirror/lang-css": "^6.3.0",
+    "@codemirror/lang-html": "^6.4.9",
+    "@codemirror/lang-javascript": "^6.2.2",
+    "@codemirror/lang-markdown": "^6.3.0",
+    "@codemirror/theme-one-dark": "^6.1.2",
+    "@supabase/supabase-js": "^2.45.4",
+    "@uiw/react-codemirror": "^4.23.0",
+    "fflate": "^0.8.2",
+    "next": "^15.5.29",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.2"
+  }
+}

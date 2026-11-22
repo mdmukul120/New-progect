@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html, body { height: 100%; }
+
+body {
+  background: #0b0f14;
+  color: #e6edf3;
+  font-family: ui-sans-serif, system-ui, 'Segoe UI', Roboto, 'Noto Sans Bengali', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* স্ক্রলবার */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0b0f14; }
+::-webkit-scrollbar-thumb { background: #23324a; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #2f415e; }
+
+@layer components {
+  .card { @apply rounded-xl border border-line bg-panel; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium
+           transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary { @apply btn bg-brand text-ink hover:bg-[#34c98a]; }
+  .btn-ghost { @apply btn border border-line text-[#c8d3df] hover:bg-[#16202d]; }
+  .btn-danger { @apply btn border border-[#3a1f27] text-[#ff8a9b] hover:bg-[#241318]; }
+  .input {
+    @apply w-full rounded-lg border border-line bg-[#0d141d] px-3 py-2 text-sm text-[#e6edf3]
+           outline-none placeholder:text-[#5b6b7d] focus:border-brand;
+  }
+  .label { @apply mb-1 block text-xs font-medium text-[#8b98a5]; }
+}
