@@ -78,3 +78,14 @@ Vercel → Settings → Domains → Refresh → "Valid Configuration" দেখ�
 - punycode: `xn--p5b3cn2db.xn--54b7fta0cc.xn--45bl4db`
 - CNAME: name `মুকুল` (or `xn--p5b3cn2db`) → `6f224acf017ea0bd.vercel-dns-017.com.`
 - TXT: **লাগবে না** (Vercel: verified=true)
+
+## রাউটিং নিয়ম (নতুন)
+
+| হোস্ট | কী দেখাবে |
+|---|---|
+| `*.vercel.app`, `localhost` | পুরো প্যানেল + `/s/<site>` প্রিভিউ |
+| `PREFERRED_SITE` সেট করা হোস্ট | সব রিকোয়েস্ট ওই সাইটে (প্যানেলের `/admin` বাদে) |
+| `ROOT_DOMAIN`-এর সাবডোমেইন | সেই নামের সাইট (`hello.sites.xyz`) |
+| অন্য যেকোনো ডোমেইন | পুরো অ্যাপ (প্যানেল সহ) — `মুকুল.পাতা.বাংলা` এখন এখানে |
+
+`PREFERRED_SITE` খালি থাকলে custom ডোমেইনে প্যানেল দেখাবে (নিরাপদ ডিফল্ট)।

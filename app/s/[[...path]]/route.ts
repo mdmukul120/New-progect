@@ -12,11 +12,13 @@ const SECURITY_HEADERS = {
 };
 
 function isPlatformHost(host: string): boolean {
+  const deploymentHost = (process.env.VERCEL_URL || '').toLowerCase();
   return (
     host === 'localhost' ||
     host === '127.0.0.1' ||
     host.endsWith('.vercel.app') ||
-    host.endsWith('.e2b.app')
+    host.endsWith('.e2b.app') ||
+    (!!deploymentHost && host === deploymentHost)
   );
 }
 
@@ -55,9 +57,14 @@ export async function GET(req: NextRequest) {
 
   const preview = originalPath.match(/^\/s\/([a-z0-9][a-z0-9-]{0,39})(\/.*)?$/);
 
+  const forced = (req.headers.get('x-site-name') || '').toLowerCase();
+
   if (isPlatformHost(host) && preview) {
     siteName = preview[1];
     filePath = preview[2] || '/';
+  } else if (forced) {
+    siteName = forced;
+    filePath = originalPath;
   } else {
     siteName = siteFromHost(host);
     filePath = originalPath;
