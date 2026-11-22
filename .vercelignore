@@ -1,4 +1,7 @@
-# Never ship local tooling, caches or generated data to the build.
+# The vercel-php runtime copies the whole repository into the function bundle,
+# so application code (src/, templates/, config/, database/, public/) must stay.
+# Only local tooling, caches and generated data are excluded.
+
 .cache/
 node_modules/
 vendor/
@@ -7,10 +10,6 @@ storage/
 database/*.sqlite
 database/*.sqlite-wal
 database/*.sqlite-shm
-src/**
-templates/**
-config/**
-bin/**
 *.md
 .env
 .env.local
