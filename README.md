@@ -48,3 +48,20 @@ npm run dev                  # http://localhost:3000
 - Vercel-এর ফাইল সিস্টেম read-only → Vercel-এ চালাতে **Supabase স্টোরেজ আবশ্যক**
 - Supabase free tier: ১ GB স্টোরেজ (কম্প্রেসড HTML/CSS সাইটের জন্য যথেষ্ট)
 - Vercel Hobby: শুধু ব্যক্তিগত/নন-কমার্শিয়াল ব্যবহার
+
+## লাইভ ইনস্টল (আপনার অ্যাকাউন্টে)
+
+| কী | মান |
+|---|---|
+| Vercel প্রজেক্ট | `sitehub` (`prj_Uw9mJXBI57Bm6oahwnLbVZdXHZkc`) |
+| Supabase প্রজেক্ট | `movielinkbd` (`otdrcsarfklukhuhfpzi`), bucket `sitehub` |
+| কাস্টম ডোমেইন | `মুকুল.পাতা.বাংলা` → `xn--p5b3cn2db.xn--45bl4db.xn--54b7fta0cc` |
+
+### DNS রেকর্ড (ready.bd → DNS Records)
+
+| Type | Name | Value |
+|---|---|---|
+| TXT | `_vercel` | `vc-domain-verify=xn--p5b3cn2db.xn--45bl4db.xn--54b7fta0cc,855a1cf26df5bc3a1a3c` |
+| CNAME | `মুকুল` (অথবা `xn--p5b3cn2db`) | `cname.vercel-dns.com.` |
+
+Vercel → Settings → Domains → Refresh → "Valid Configuration" দেখলেই লাইভ, SSL অটো।
