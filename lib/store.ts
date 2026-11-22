@@ -248,6 +248,14 @@ function supabaseDriver(): Driver {
   const metaPath = (name: string) => `__meta/${name}.json`;
   const filePath = (name: string, file: string) => `sites/${name}/${file}`;
 
+  function explain(where: string, message?: string): string {
+    const msg = message || `${where} ব্যর্থ`;
+    if (/bucket not found|not found/i.test(msg) && where === 'upload') {
+      return `Storage bucket "${bucket}" নেই — Supabase-এ তৈরি করুন।`;
+    }
+    return msg;
+  }
+
   async function readMeta(name: string): Promise<Site | null> {
     const { data, error } = await db.storage.from(bucket).download(metaPath(name));
     if (error || !data) return null;
@@ -258,30 +266,31 @@ function supabaseDriver(): Driver {
     }
   }
 
-  async function listFiles(name: string): Promise<string[]> {
-    const out: string[] = [];
+  /** সাইটের সব ফাইল + মোট সাইজ */
+  async function scan(name: string): Promise<{ files: string[]; bytes: number }> {
+    const files: string[] = [];
+    let bytes = 0;
     async function walk(prefix: string) {
       const { data, error } = await db.storage.from(bucket).list(prefix, { limit: 1000 });
       if (error || !data) return;
       for (const item of data) {
-        const full = `${prefix}/${item.name}`;
-        if (item.id === null) await walk(full); // folder
-        else out.push(full.replace(`sites/${name}/`, ''));
+        const full = prefix ? `${prefix}/${item.name}` : item.name;
+        if (!item.id) {
+          await walk(full); // ফোল্ডার
+        } else {
+          files.push(full.replace(`sites/${name}/`, ''));
+          const meta = item.metadata as { size?: number } | null;
+          bytes += meta?.size ?? 0;
+        }
       }
     }
     await walk(`sites/${name}`);
-    return out.sort();
+    files.sort();
+    return { files, bytes };
   }
 
   async function buildMeta(name: string, prev?: Site | null): Promise<Site> {
-    const files = await listFiles(name);
-    let bytes = 0;
-    for (const f of files) {
-      const { data } = await db.storage.from(bucket).list(`sites/${name}/${f.split('/').slice(0, -1).join('/')}`, {
-        search: f.split('/').pop(),
-      });
-      bytes += data?.[0]?.metadata?.size ?? 0;
-    }
+    const { files, bytes } = await scan(name);
     const index =
       files.find((f) => f === 'index.html') ??
       files.find((f) => f.endsWith('/index.html')) ??
@@ -296,10 +305,11 @@ function supabaseDriver(): Driver {
       fileCount: files.length,
       bytes,
     };
-    await db.storage.from(bucket).upload(metaPath(name), JSON.stringify(meta), {
+    const { error } = await db.storage.from(bucket).upload(metaPath(name), JSON.stringify(meta), {
       contentType: 'application/json',
       upsert: true,
     });
+    if (error) throw new Error(explain('upload', error.message));
     return meta;
   }
 
@@ -308,7 +318,9 @@ function supabaseDriver(): Driver {
       const { data, error } = await db.storage.from(bucket).list('__meta', { limit: 1000 });
       if (error || !data) return [];
       const sites = await Promise.all(
-        data.filter((d) => d.name.endsWith('.json')).map((d) => readMeta(d.name.replace(/\.json$/, ''))),
+        data
+          .filter((d) => d.name.endsWith('.json'))
+          .map((d) => readMeta(d.name.replace(/\.json$/, ''))),
       );
       return sites.filter((s): s is Site => !!s).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     },
@@ -319,9 +331,10 @@ function supabaseDriver(): Driver {
       return buildMeta(name);
     },
     async remove(name) {
-      const files = await listFiles(name);
+      const { files } = await scan(name);
       if (files.length) {
-        await db.storage.from(bucket).remove(files.map((f) => filePath(name, f)));
+        const { error } = await db.storage.from(bucket).remove(files.map((f) => filePath(name, f)));
+        if (error) throw new Error(explain('remove', error.message));
       }
       await db.storage.from(bucket).remove([metaPath(name)]);
     },
@@ -340,7 +353,7 @@ function supabaseDriver(): Driver {
       if (!norm) throw new Error('অবৈধ ফাইল পাথ');
       const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
       assertFileSize(buf.byteLength);
-      const files = await listFiles(site);
+      const { files } = await scan(site);
       if (files.length >= MAX_FILES_PER_SITE && !files.includes(norm)) {
         throw new Error(`সাইটে সর্বোচ্চ ${MAX_FILES_PER_SITE}টি ফাইল রাখা যাবে।`);
       }
@@ -348,7 +361,7 @@ function supabaseDriver(): Driver {
         contentType: mimeFor(norm),
         upsert: true,
       });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(explain('upload', error.message));
       await buildMeta(site, await readMeta(site));
     },
     async deleteFile(site, file) {
@@ -357,7 +370,9 @@ function supabaseDriver(): Driver {
       await db.storage.from(bucket).remove([filePath(site, norm)]);
       await buildMeta(site, await readMeta(site));
     },
-    listFiles,
+    async listFiles(site) {
+      return (await scan(site)).files;
+    },
     async afterChange(site) {
       await buildMeta(site, await readMeta(site));
     },

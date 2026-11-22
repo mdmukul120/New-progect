@@ -79,8 +79,7 @@ export default function Dashboard({ initialSites, rootDomain, defaultSite }: Pro
 
   function liveUrl(name: string) {
     if (rootDomain) return `https://${name}.${rootDomain}`;
-    if (defaultSite === name) return window.location.origin;
-    return `${window.location.origin}/s${''}`;
+    return `${window.location.origin}/s/${name}`;
   }
 
   return (
