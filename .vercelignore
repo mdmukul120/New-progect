@@ -16,4 +16,5 @@ database/*.sqlite-shm
 .git/
 .htaccess
 public/.htaccess
+public/router.php
 vercel.json
