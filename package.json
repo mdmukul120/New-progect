@@ -1,0 +1,21 @@
+{
+  "name": "movielinkbd",
+  "private": true,
+  "version": "1.0.0",
+  "description": "MovieLinkBD — ad-free movie/series index (PHP MVC + SQLite/MySQL + JSON API)",
+  "type": "module",
+  "scripts": {
+    "dev": "node tools/dev-bridge.mjs",
+    "serve": "php -S 0.0.0.0:8080 -t public public/router.php",
+    "migrate": "php bin/console.php migrate --fresh --seed",
+    "seed": "php bin/console.php seed",
+    "check": "php bin/console.php check",
+    "lint": "find src public templates config database bin -name '*.php' -print0 | xargs -0 -n1 php -l"
+  },
+  "devDependencies": {
+    "@php-wasm/cli": "3.1.64"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
