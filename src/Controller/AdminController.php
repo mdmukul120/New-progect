@@ -13,21 +13,22 @@ use App\Core\Config;
 use App\Core\Env;
 use App\Core\Request;
 use App\Core\Response;
+use App\Core\SessionHandler;
 
 final class AdminController
 {
     public function __construct(private readonly App $app)
     {
         if (session_status() !== PHP_SESSION_ACTIVE) {
-            // Keep sessions inside the project so we never depend on the
-            // host's php.ini session path being writable.
-            $sessionDir = MLBD_ROOT . '/storage/sessions';
-            if (!is_dir($sessionDir)) {
-                @mkdir($sessionDir, 0775, true);
-            }
-            if (is_dir($sessionDir) && is_writable($sessionDir)) {
-                session_save_path($sessionDir);
-            }
+            // Sessions live in the database: the admin panel has to keep
+            // working on serverless hosts where /tmp is per-invocation.
+            session_set_save_handler(
+                new SessionHandler(
+                    $this->app->db(),
+                    (int) Config::get('app.security.session_hours', 12) * 3600
+                ),
+                true
+            );
             session_set_cookie_params([
                 'lifetime' => 0,
                 'path' => '/',
@@ -107,6 +108,7 @@ final class AdminController
             return $guard;
         }
         $db = $this->app->db();
+        $since = $db->sinceDaysAgo(1);
 
         return $this->render('admin/dashboard', [
             'title' => 'Dashboard',
@@ -115,14 +117,14 @@ final class AdminController
                 'views' => (int) $db->scalar('SELECT COALESCE(SUM(views),0) FROM titles'),
                 'episodes' => (int) $db->scalar('SELECT COUNT(*) FROM episodes'),
                 'endpoints' => $this->app->endpoints()->count(),
-                'requests_24h' => (int) $db->scalar("SELECT COUNT(*) FROM api_logs WHERE created_at >= datetime('now','-1 day')"),
-                'avg_ms' => (int) $db->scalar("SELECT COALESCE(AVG(duration_ms),0) FROM api_logs WHERE created_at >= datetime('now','-1 day')"),
+                'requests_24h' => (int) $db->scalar("SELECT COUNT(*) FROM api_logs WHERE created_at >= " . $since),
+                'avg_ms' => (int) $db->scalar("SELECT COALESCE(AVG(duration_ms),0) FROM api_logs WHERE created_at >= " . $since),
             ],
             'byType' => $db->all('SELECT type, COUNT(*) AS total FROM titles GROUP BY type ORDER BY total DESC'),
             'topEndpoints' => $db->all(
-                "SELECT path, COUNT(*) AS hits, CAST(AVG(duration_ms) AS INTEGER) AS avg_ms
-                   FROM api_logs WHERE created_at >= datetime('now','-1 day')
-                  GROUP BY path ORDER BY hits DESC LIMIT 8"
+                'SELECT path, COUNT(*) AS hits, CAST(AVG(duration_ms) AS INTEGER) AS avg_ms'
+                . ' FROM api_logs WHERE created_at >= ' . $since
+                . ' GROUP BY path ORDER BY hits DESC LIMIT 8' 
             ),
             'recentTitles' => $db->all('SELECT * FROM titles ORDER BY updated_at DESC LIMIT 8'),
         ]);

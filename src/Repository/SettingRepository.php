@@ -29,7 +29,8 @@ final class SettingRepository
         $exists = $this->db->scalar('SELECT 1 FROM settings WHERE ' . $this->keyColumn() . ' = :k', ['k' => $key]);
         if ($exists === null) {
             $this->db->run(
-                'INSERT INTO settings (' . $this->keyColumn() . ', value) VALUES (:k, :v)',
+                'INSERT INTO settings (' . $this->keyColumn() . ', value) VALUES (:k, :v)'
+                . ' ON CONFLICT (' . $this->keyColumn() . ') DO NOTHING',
                 ['k' => $key, 'v' => $value]
             );
         } else {
@@ -58,9 +59,9 @@ final class SettingRepository
         return $out;
     }
 
-    /** "key" is a reserved word in MySQL, so it is quoted there. */
+    /** "key" is a reserved word on MySQL and Postgres, so it is quoted there. */
     private function keyColumn(): string
     {
-        return $this->db->driver() === 'mysql' ? '`key`' : 'key';
+        return $this->db->driver() === 'sqlite' ? 'key' : $this->db->quoteIdent('key');
     }
 }

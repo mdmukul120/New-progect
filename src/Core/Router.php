@@ -9,6 +9,7 @@ namespace App\Core;
 
 use App\Controller\AdminController;
 use App\Controller\ApiController;
+use App\Controller\SetupController;
 use App\Controller\SitemapController;
 use App\Controller\WebController;
 
@@ -58,6 +59,7 @@ final class Router
         $a = ApiController::class;
         $m = AdminController::class;
         $s = SitemapController::class;
+        $p = SetupController::class;
 
         // ------------------------------------------------ web (HTML)
         $this->get('/', $c, 'home');
@@ -119,6 +121,9 @@ final class Router
         $this->get('/api/ott.json', $a, 'ott');
         $this->get('/api/notices.json', $a, 'notices');
         $this->get('/api/stats.json', $a, 'stats');
+
+        // ------------------------------------------- one-shot installer
+        $this->get('/setup', $p, 'run');
 
         // ---------------------------------------------- sitemaps / seo
         $this->get('/sitemap.xml', $s, 'index');
@@ -193,7 +198,7 @@ final class Router
             // Keep the log table small without a cron job.
             if (random_int(1, 40) === 1) {
                 $this->app->db()->run(
-                    "DELETE FROM api_logs WHERE created_at < datetime('now','-7 day')"
+                    'DELETE FROM api_logs WHERE created_at < ' . $this->app->db()->sinceDaysAgo(7)
                 );
             }
         } catch (\Throwable) {

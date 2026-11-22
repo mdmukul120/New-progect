@@ -1,7 +1,10 @@
 <?php
 /**
  * PDO wrapper with a very small query-builder style API.
- * Works with SQLite (default) and MySQL.
+ * Works with SQLite (default), MySQL/MariaDB and PostgreSQL (Supabase).
+ *
+ * The few dialect differences the app needs are normalised here so that
+ * repositories and controllers always speak plain SQL.
  */
 
 declare(strict_types=1);
@@ -32,7 +35,8 @@ final class Database
         $this->config = $conf;
 
         try {
-            if (($conf['driver'] ?? 'sqlite') === 'sqlite') {
+            $driver = (string) ($conf['driver'] ?? 'sqlite');
+            if ($driver === 'sqlite') {
                 $path = (string) $conf['database'];
                 $dir = dirname($path);
                 if (!is_dir($dir)) {
@@ -46,6 +50,22 @@ final class Database
                 $this->pdo->exec('PRAGMA journal_mode = WAL');
                 $this->pdo->exec('PRAGMA foreign_keys = ON');
                 $this->pdo->exec('PRAGMA busy_timeout = 5000');
+            } elseif ($driver === 'pgsql') {
+                $dsn = sprintf(
+                    'pgsql:host=%s;port=%d;dbname=%s;sslmode=%s',
+                    $conf['host'],
+                    (int) $conf['port'],
+                    $conf['database'],
+                    $conf['sslmode'] ?? 'require'
+                );
+                $this->pdo = new PDO($dsn, (string) $conf['username'], (string) $conf['password'], [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => false,
+                    // Serverless: connect lazily, fail fast instead of hanging.
+                    PDO::ATTR_TIMEOUT => 10,
+                ]);
+                $this->pdo->exec("SET application_name = 'movielinkbd'");
             } else {
                 $dsn = sprintf(
                     'mysql:host=%s;port=%d;dbname=%s;charset=%s',
@@ -63,7 +83,8 @@ final class Database
         } catch (PDOException $e) {
             error_log('DB connection failed: ' . $e->getMessage());
             throw new RuntimeException(
-                'Database connection failed. Run `php bin/console.php migrate --seed` first.',
+                'Database connection failed. Check the DB_* environment variables, or run '
+                . '`php bin/console.php migrate --seed` for a local install.',
                 0,
                 $e
             );
@@ -78,6 +99,62 @@ final class Database
     public function driver(): string
     {
         return (string) ($this->config['driver'] ?? 'sqlite');
+    }
+
+    public function isPostgres(): bool
+    {
+        return $this->driver() === 'pgsql';
+    }
+
+    /**
+     * Full "insert, skip duplicates" statement for the current dialect.
+     *
+     * @param string $columns        column list, e.g. "(title_id, genre_id)"
+     * @param string $values         value list,  e.g. "VALUES (:t, :g)"
+     * @param string $conflictTarget the unique key to probe, e.g. "(title_id, genre_id)"
+     */
+    public function insertIgnore(string $table, string $columns, string $values, string $conflictTarget = ''): string
+    {
+        $prefix = match ($this->driver()) {
+            'mysql' => 'INSERT IGNORE INTO ',
+            'pgsql' => 'INSERT INTO ',
+            default => 'INSERT OR IGNORE INTO ',
+        };
+
+        $sql = $prefix . $table . ' ' . $columns . ' ' . $values;
+
+        if ($this->driver() === 'pgsql') {
+            $sql .= ' ON CONFLICT ' . ($conflictTarget === '' ? '' : $conflictTarget . ' ') . 'DO NOTHING';
+        }
+
+        return $sql;
+    }
+
+    /**
+     * A quoted identifier for the current driver ("key" is reserved on
+     * MySQL and Postgres alike, but they quote it differently).
+     */
+    public function quoteIdent(string $identifier): string
+    {
+        return match ($this->driver()) {
+            'pgsql' => '"' . str_replace('"', '""', $identifier) . '"',
+            'mysql' => '`' . str_replace('`', '``', $identifier) . '`',
+            default => '"' . str_replace('"', '""', $identifier) . '"',
+        };
+    }
+
+    /**
+     * "Rows created in the last N days", in the driver's own dialect.
+     * Timestamps are stored as sortable TEXT by every backend.
+     */
+    public function sinceDaysAgo(int $days): string
+    {
+        $days = max(0, $days);
+        return match ($this->driver()) {
+            'pgsql' => "(now() - INTERVAL '" . $days . " day')::text",
+            'mysql' => 'DATE_SUB(NOW(), INTERVAL ' . $days . ' DAY)',
+            default => "datetime('now','-" . $days . " day')",
+        };
     }
 
     public function pdo(): PDO
@@ -138,7 +215,13 @@ final class Database
             implode(', ', $placeholders)
         );
         $this->run($sql, $this->bindings($data));
-        return (int) $this->pdo->lastInsertId();
+        $last = $this->pdo->lastInsertId();
+        if ($last !== false && (string) $last !== '' && (int) $last > 0) {
+            return (int) $last;
+        }
+        // Postgres only exposes the serial value via RETURNING, so a table
+        // without a sequence-backed primary key falls back to 0 here.
+        return 0;
     }
 
     /**

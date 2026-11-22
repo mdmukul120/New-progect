@@ -145,3 +145,12 @@ CREATE TABLE IF NOT EXISTS api_logs (
     created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_api_logs_created ON api_logs (created_at DESC);
+
+-- Admin sessions (see src/Core/SessionHandler.php). Kept in the database so
+-- the panel keeps working on serverless hosts with an ephemeral /tmp.
+CREATE TABLE IF NOT EXISTS sessions (
+    id            TEXT PRIMARY KEY,
+    payload       TEXT NOT NULL,
+    last_activity BIGINT NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions (last_activity);

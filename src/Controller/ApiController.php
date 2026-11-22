@@ -236,7 +236,7 @@ final class ApiController
     {
         $db = $this->app->db();
         $byType = $db->all('SELECT type, COUNT(*) AS total FROM titles GROUP BY type ORDER BY total DESC');
-        $requests24h = (int) $db->scalar("SELECT COUNT(*) FROM api_logs WHERE created_at >= datetime('now','-1 day')");
+        $requests24h = (int) $db->scalar('SELECT COUNT(*) FROM api_logs WHERE created_at >= ' . $db->sinceDaysAgo(1));
 
         return $this->ok([
             'titles' => (int) $db->scalar('SELECT COUNT(*) FROM titles'),

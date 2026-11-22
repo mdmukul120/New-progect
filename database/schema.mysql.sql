@@ -145,3 +145,12 @@ CREATE TABLE IF NOT EXISTS api_logs (
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_api_logs_created (created_at DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Admin sessions (see src/Core/SessionHandler.php). Kept in the database so
+-- the panel keeps working on serverless hosts with an ephemeral /tmp.
+CREATE TABLE IF NOT EXISTS sessions (
+    id            VARCHAR(128) PRIMARY KEY,
+    payload       TEXT NOT NULL,
+    last_activity BIGINT NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_activity ON sessions (last_activity);

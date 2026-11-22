@@ -12,11 +12,7 @@ final class RateLimiter
     /** @return array{allowed:bool,remaining:int,reset:int} */
     public static function check(string $key, int $limit, int $window = 60): array
     {
-        $dir = MLBD_ROOT . '/storage/cache';
-        if (!is_dir($dir)) {
-            @mkdir($dir, 0775, true);
-        }
-        $file = $dir . '/rl_' . sha1($key) . '.json';
+        $file = Storage::cache() . '/rl_' . sha1($key) . '.json';
         $now = time();
         $bucket = ['start' => $now, 'count' => 0];
 

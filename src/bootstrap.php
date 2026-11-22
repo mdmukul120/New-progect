@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 use App\Core\Config;
 use App\Core\Env;
+use App\Core\Storage;
 
 define('MLBD_ROOT', dirname(__DIR__));
 
@@ -37,11 +38,11 @@ ini_set('display_errors', $debug ? '1' : '0');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
-$logDir = MLBD_ROOT . '/storage/logs';
-if (!is_dir($logDir)) {
-    @mkdir($logDir, 0775, true);
-}
+// Logs go to storage/logs on a normal host and to the system temp dir on
+// serverless platforms (the deployment bundle itself is read-only).
+$logDir = Storage::logs();
 ini_set('error_log', $logDir . '/php-error.log');
+@touch($logDir . '/php-error.log');
 
 set_exception_handler(static function (Throwable $e) use ($debug): void {
     error_log(sprintf(

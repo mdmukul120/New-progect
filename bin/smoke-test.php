@@ -33,15 +33,19 @@ function http(string $url, string $method = 'GET', array $headers = [], ?string 
         ],
     ]);
     $content = @file_get_contents($url, false, $context);
+    // PHP 8.5 deprecates the locally scoped $http_response_header variable.
+    $responseHeaders = function_exists('http_get_last_response_headers')
+        ? (http_get_last_response_headers() ?? [])
+        : (${'http_response_header'} ?? []);
     $rawHeaders = [];
-    foreach ($http_response_header ?? [] as $line) {
+    foreach ($responseHeaders as $line) {
         if (str_contains($line, ':')) {
             [$k, $v] = explode(':', $line, 2);
             $rawHeaders[strtolower(trim($k))] = trim($v);
         }
     }
     $status = 200;
-    if (isset($http_response_header[0]) && preg_match('~\s(\d{3})~', $http_response_header[0], $m)) {
+    if (isset($responseHeaders[0]) && preg_match('~\s(\d{3})~', $responseHeaders[0], $m)) {
         $status = (int) $m[1];
     }
     return [$status, (string) $content, $rawHeaders];

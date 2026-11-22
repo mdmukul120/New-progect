@@ -99,6 +99,9 @@ final class TitleRepository
             // Curated members first (collection_items), then a keyword match so a
             // newly published title joins its collection automatically. Kept in
             // one sub-select so COUNT(*) and the page query stay identical.
+            $byLanguage = $this->containsToken('c2.keywords', "LOWER(COALESCE(t.language, ''))");
+            $byType = $this->containsToken('c3.keywords', 'LOWER(t.type)');
+            $byGenre = $this->containsToken('c4.keywords', 'LOWER(g.slug)');
             $clauses[] = "id IN (
                 SELECT ci.title_id FROM collection_items ci
                   JOIN collections c ON c.id = ci.collection_id
@@ -106,22 +109,17 @@ final class TitleRepository
                 UNION
                 SELECT t.id FROM titles t
                   JOIN collections c2 ON c2.slug = :collection
-                 WHERE t.is_adult = 0
-                   AND ('|' || COALESCE(c2.keywords, '') || '|')
-                       LIKE '%|' || LOWER(COALESCE(t.language, '')) || '|%'
+                 WHERE t.is_adult = 0 AND {$byLanguage}
                 UNION
                 SELECT t.id FROM titles t
                   JOIN collections c3 ON c3.slug = :collection
-                 WHERE t.is_adult = 0
-                   AND ('|' || COALESCE(c3.keywords, '') || '|')
-                       LIKE '%|' || LOWER(t.type) || '|%'
+                 WHERE t.is_adult = 0 AND {$byType}
                 UNION
                 SELECT t.id FROM titles t
                   JOIN title_genres tg ON tg.title_id = t.id
                   JOIN genres g ON g.id = tg.genre_id
                   JOIN collections c4 ON c4.slug = :collection
-                 WHERE t.is_adult = 0
-                   AND ('|' || COALESCE(c4.keywords, '') || '|') LIKE '%|' || LOWER(g.slug) || '|%'
+                 WHERE t.is_adult = 0 AND {$byGenre}
             )";
             $bindings['collection'] = $collection;
         }
@@ -182,6 +180,30 @@ final class TitleRepository
         return [$clauses === [] ? '' : 'WHERE ' . implode(' AND ', $clauses), $bindings];
     }
 
+    /**
+     * Concatenate SQL expressions with the current driver's operator.
+     * SQLite and Postgres use `||`, MySQL needs CONCAT().
+     *
+     * @param array<int,string> $parts
+     */
+    private function concat(array $parts): string
+    {
+        return $this->db->driver() === 'mysql'
+            ? 'CONCAT(' . implode(', ', $parts) . ')'
+            : '(' . implode(' || ', $parts) . ')';
+    }
+
+    /**
+     * "|a|b|"-style token list contains the value of $valueExpression,
+     * e.g. `|hindi|tamil|` matched against `hindi`.
+     */
+    private function containsToken(string $tokenColumn, string $valueExpression): string
+    {
+        return $this->concat(["'|'", 'COALESCE(' . $tokenColumn . ", '')", "'|'"])
+            . ' LIKE '
+            . $this->concat(["'%|'", $valueExpression, "'|%'"]);
+    }
+
     /** @return array<string,mixed>|null */
     public function find(string $slug): ?array
     {
@@ -211,8 +233,12 @@ final class TitleRepository
                 $genreId = $this->db->scalar('SELECT id FROM genres WHERE slug = :slug', ['slug' => $slug]);
             }
             $this->db->run(
-                ($this->db->driver() === 'mysql' ? 'INSERT IGNORE INTO ' : 'INSERT OR IGNORE INTO ')
-                . 'title_genres (title_id, genre_id) VALUES (:t, :g)',
+                $this->db->insertIgnore(
+                    'title_genres',
+                    '(title_id, genre_id)',
+                    'VALUES (:t, :g)',
+                    '(title_id, genre_id)'
+                ),
                 ['t' => $titleId, 'g' => (int) $genreId]
             );
         }
@@ -308,10 +334,15 @@ final class TitleRepository
         }
 
         $inserted = 0;
-        $verb = $this->db->driver() === 'mysql' ? 'INSERT IGNORE INTO ' : 'INSERT OR IGNORE INTO ';
+        $verb = $this->db->insertIgnore(
+            'episodes',
+            '(title_id, season, episode, name)',
+            'VALUES (:t, :s, :e, :n)',
+            '(title_id, season, episode)'
+        );
         foreach ($numbers as $episode) {
             $this->db->run(
-                $verb . 'episodes (title_id, season, episode, name) VALUES (:t, :s, :e, :n)',
+                $verb,
                 ['t' => $titleId, 's' => $season, 'e' => $episode, 'n' => 'Episode ' . $episode]
             );
             $inserted++;
