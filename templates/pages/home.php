@@ -20,6 +20,7 @@ $heroCandidates = array_values(array_filter($heroCandidates, static fn (array $r
 $heroSlides = array_slice($heroCandidates, 0, 3);
 $pageNo = (int) ($page ?? 1);
 ?>
+<?php if ($pageNo <= 1): ?>
 <div class="hero shell">
   <div class="hero-grid">
     <div class="hero-main">
@@ -141,14 +142,23 @@ $pageNo = (int) ($page ?? 1);
   </div>
 </section>
 <?php endif; ?>
+<?php endif; ?>
 
-<section class="section shell" aria-labelledby="recentHeading">
+<section class="section shell" id="recentSection" aria-labelledby="recentHeading">
   <div class="section-head">
     <div>
-      <h2 id="recentHeading">🆕 Recently updated</h2>
+      <?php if ($pageNo > 1): ?>
+        <h1 id="recentHeading">🆕 Recently updated — Page <?= $pageNo ?> of <?= (int) $recent['pages'] ?></h1>
+      <?php else: ?>
+        <h2 id="recentHeading">🆕 Recently updated</h2>
+      <?php endif; ?>
       <p class="section-sub"><?= (int) $recent['total'] ?> titles · page <?= $pageNo ?> of <?= (int) $recent['pages'] ?></p>
     </div>
-    <a class="section-link" href="/latest">Browse all →</a>
+    <?php if ($pageNo > 1): ?>
+      <a class="section-link" href="/">← Back to Page 1</a>
+    <?php else: ?>
+      <a class="section-link" href="/latest">Browse all →</a>
+    <?php endif; ?>
   </div>
 
   <?php if ($recent['items'] === []): ?>

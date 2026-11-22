@@ -198,6 +198,16 @@ final class AdminController
             $this->app->titles()->syncEpisodes($id, (string) $data['ep_label']);
         }
 
+        $videoUrl = $request->string('video_url');
+        if ($videoUrl !== '') {
+            $this->app->titles()->saveCustomLink(
+                $id,
+                $videoUrl,
+                (string) ($data['quality'] ?: '1080p'),
+                'Direct HD Stream · ' . ($data['quality'] ?: '1080p')
+            );
+        }
+
         return Response::redirect(url('/admin/titles?saved=' . $id));
     }
 

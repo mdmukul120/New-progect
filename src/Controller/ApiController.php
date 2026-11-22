@@ -17,6 +17,7 @@ namespace App\Controller;
 
 use App\Core\App;
 use App\Core\Config;
+use App\Core\MediaCatalog;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -90,16 +91,21 @@ final class ApiController
         if ($title === null) {
             return $this->fail('not_found', 'No title with slug "' . $slug . '"', 404);
         }
+        $rawLinks = $this->app->titles()->downloadLinks((int) $title['id']);
+        $links = MediaCatalog::normaliseLinks($title, $rawLinks);
         $payload = $this->serialize($title);
         $payload['episodes'] = $this->app->titles()->episodes((int) $title['id']);
+        $payload['streams'] = MediaCatalog::servers($title, $rawLinks);
         $payload['downloads'] = array_map(
             static fn (array $l): array => [
                 'label' => $l['label'],
                 'quality' => $l['quality'],
                 'size' => $l['size'],
                 'url' => $l['url'],
+                'direct_url' => $l['direct_url'],
+                'filename' => $l['filename'],
             ],
-            $this->app->titles()->downloadLinks((int) $title['id'])
+            $links
         );
         $payload['related'] = array_map([$this, 'serialize'], $this->app->titles()->related($title, 8));
 
@@ -139,6 +145,7 @@ final class ApiController
             'year' => $row['year'] !== null ? (int) $row['year'] : null,
             'quality' => $row['quality'],
             'views' => (int) $row['views'],
+            'views_human' => format_views((int) $row['views']),
         ], $result['items']);
 
         return $this->ok($items, ['query' => $q, 'count' => count($items)]);

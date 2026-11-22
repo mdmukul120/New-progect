@@ -73,13 +73,14 @@ final class TitleRepository
 
         $language = (string) ($params['language'] ?? '');
         if ($language !== '') {
-            $langs = array_values(array_filter(array_map('trim', explode(',', $language))));
+            $langs = array_values(array_filter(array_map('trim', explode(',', strtolower($language)))));
             if ($langs !== []) {
                 // `language` is the primary bucket, `languages` lists every
                 // language present in labels such as "Dual [Hindi-Tamil]".
                 $ph = [];
                 foreach (array_slice($langs, 0, 12) as $i => $lang) {
-                    $ph[] = 'language = :lang' . $i . ' OR languages LIKE :langlike' . $i;
+                    $ph[] = "LOWER(COALESCE(language, '')) = :lang" . $i
+                        . " OR LOWER(COALESCE(languages, '')) LIKE :langlike" . $i;
                     $bindings['lang' . $i] = $lang;
                     $bindings['langlike' . $i] = '%|' . $lang . '|%';
                 }
@@ -168,8 +169,32 @@ final class TitleRepository
 
         $q = trim((string) ($params['q'] ?? ''));
         if ($q !== '') {
-            $clauses[] = '(title LIKE :q OR COALESCE(language, \'\') LIKE :q OR COALESCE(language_raw, \'\') LIKE :q OR COALESCE(quality, \'\') LIKE :q)';
-            $bindings['q'] = '%' . $q . '%';
+            // Postgres `LIKE` is case-sensitive, so normalise both sides with
+            // LOWER() and match each whitespace-separated word independently.
+            $tokens = array_values(array_filter(
+                preg_split('~\s+~u', mb_strtolower($q, 'UTF-8')) ?: [],
+                static fn (string $t): bool => $t !== ''
+            ));
+            foreach (array_slice($tokens, 0, 6) as $idx => $token) {
+                $key = 'q' . $idx;
+                $clauses[] = "(
+                    LOWER(title) LIKE :{$key}
+                    OR LOWER(COALESCE(language, '')) LIKE :{$key}
+                    OR LOWER(COALESCE(language_raw, '')) LIKE :{$key}
+                    OR LOWER(COALESCE(languages, '')) LIKE :{$key}
+                    OR LOWER(COALESCE(quality, '')) LIKE :{$key}
+                    OR LOWER(COALESCE(ott_slug, '')) LIKE :{$key}
+                    OR LOWER(COALESCE(ep_label, '')) LIKE :{$key}
+                    OR LOWER(COALESCE(synopsis, '')) LIKE :{$key}
+                    OR LOWER(COALESCE(type, '')) LIKE :{$key}
+                    OR id IN (
+                        SELECT tg_q.title_id FROM title_genres tg_q
+                          JOIN genres g_q ON g_q.id = tg_q.genre_id
+                         WHERE LOWER(g_q.slug) LIKE :{$key} OR LOWER(g_q.name) LIKE :{$key}
+                    )
+                )";
+                $bindings[$key] = '%' . $token . '%';
+            }
         }
 
         if (isset($params['exclude']) && (int) $params['exclude'] > 0) {
@@ -415,5 +440,28 @@ final class TitleRepository
     public function delete(int $id): void
     {
         $this->db->run('DELETE FROM titles WHERE id = :id', ['id' => $id]);
+    }
+
+    /**
+     * Save or replace the primary custom stream/download link for a title.
+     */
+    public function saveCustomLink(int $titleId, string $url, string $quality = '1080p', string $label = 'Direct HD Stream'): void
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return;
+        }
+        $this->db->run(
+            'DELETE FROM download_links WHERE title_id = :id AND sort = -1',
+            ['id' => $titleId]
+        );
+        $this->db->insert('download_links', [
+            'title_id' => $titleId,
+            'label' => $label,
+            'quality' => $quality ?: '1080p',
+            'size' => 'Direct',
+            'url' => $url,
+            'sort' => -1,
+        ]);
     }
 }

@@ -78,15 +78,15 @@ return [
     ],
 
     // Homepage rails -------------------------------------------------
-    // key => [title, query params for TitleRepository::search()]
+    // key => [title, href, query params for TitleRepository::search()]
     'rails' => [
-        'movies' => ['title' => '🎬 Movies', 'params' => ['type' => 'movie', 'per_page' => 18]],
-        'series' => ['title' => '📺 Series & TV Shows', 'params' => ['type' => 'series', 'per_page' => 18]],
-        'drama' => ['title' => '🇰🇷 K/J/C Drama', 'params' => ['type' => 'drama', 'per_page' => 18]],
-        'south' => ['title' => '🔥 South Indian', 'params' => ['language' => 'tamil,telugu,malayalam,kannada', 'per_page' => 18]],
-        'ongoing' => ['title' => '⏳ Ongoing Series', 'params' => ['status' => 'ongoing', 'per_page' => 18]],
-        'anime' => ['title' => '🍥 Anime Zone', 'params' => ['type' => 'anime', 'per_page' => 18]],
-        'animation' => ['title' => '🎨 Animation', 'params' => ['genre' => 'animation', 'per_page' => 18]],
-        'adult' => ['title' => '🔞 18+ Adult', 'params' => ['adult' => 1, 'per_page' => 18]],
+        'movies' => ['title' => '🎬 Movies', 'href' => '/type/movies', 'params' => ['type' => 'movie', 'per_page' => 18]],
+        'series' => ['title' => '📺 Series & TV Shows', 'href' => '/type/series', 'params' => ['type' => 'series', 'per_page' => 18]],
+        'drama' => ['title' => '🇰🇷 K/J/C Drama', 'href' => '/drama', 'params' => ['type' => 'drama', 'per_page' => 18]],
+        'south' => ['title' => '🔥 South Indian', 'href' => '/southIndian', 'params' => ['language' => 'tamil,telugu,malayalam,kannada', 'per_page' => 18]],
+        'ongoing' => ['title' => '⏳ Ongoing Series', 'href' => '/ongoing', 'params' => ['status' => 'ongoing', 'per_page' => 18]],
+        'anime' => ['title' => '🍥 Anime Zone', 'href' => '/anime', 'params' => ['type' => 'anime', 'per_page' => 18]],
+        'animation' => ['title' => '🎨 Animation', 'href' => '/genre/animation', 'params' => ['genre' => 'animation', 'per_page' => 18]],
+        'adult' => ['title' => '🔞 18+ Adult', 'href' => '/adult18plus', 'params' => ['adult' => 1, 'per_page' => 18]],
     ],
 ];

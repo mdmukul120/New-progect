@@ -58,6 +58,7 @@
         </select>
       </label>
       <label class="span-2">Poster URL<input type="url" name="poster" placeholder="https://…"></label>
+      <label class="span-2">Video / Stream / Download URL (optional MP4, YouTube, Drive)<input type="url" name="video_url" placeholder="https://…/movie.mp4 or YouTube / Google Drive link"></label>
       <label class="span-2">Genres (comma separated slugs)<input type="text" name="genres" placeholder="action,thriller"></label>
       <label class="span-2">Synopsis<textarea name="synopsis" rows="3"></textarea></label>
       <div class="check"><input type="checkbox" name="is_adult" value="1" id="c_adult"><label for="c_adult">18+ content</label></div>
@@ -96,4 +97,18 @@
       </tbody>
     </table>
   </div>
+  <?php if ((int) $result['pages'] > 1): ?>
+    <div class="panel-body" style="display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+      <?php $adminBase = '/admin/titles?' . ($q !== '' ? 'q=' . rawurlencode($q) . '&' : '') . 'page='; ?>
+      <span>Page <?= (int) $result['page'] ?> of <?= (int) $result['pages'] ?></span>
+      <div style="display:flex;gap:8px">
+        <?php if ((int) $result['page'] > 1): ?>
+          <a class="btn btn-ghost btn-sm" href="<?= e($adminBase . ((int) $result['page'] - 1)) ?>">← Prev</a>
+        <?php endif; ?>
+        <?php if ((int) $result['page'] < (int) $result['pages']): ?>
+          <a class="btn btn-ghost btn-sm" href="<?= e($adminBase . ((int) $result['page'] + 1)) ?>">Next →</a>
+        <?php endif; ?>
+      </div>
+    </div>
+  <?php endif; ?>
 </section>

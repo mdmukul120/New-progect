@@ -75,7 +75,7 @@ $sorts = ['recent' => 'Recently updated', 'views' => 'Most viewed', 'rating' => 
     <?= $view->partial('partials/pagination', [
         'page' => $result['page'],
         'pages' => $result['pages'],
-        'paginationBase' => '/search?q=' . rawurlencode($query) . '&page=',
+        'paginationBase' => $paginationBase,
     ]) ?>
   <?php endif; ?>
 </div>

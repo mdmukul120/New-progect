@@ -73,12 +73,12 @@ final class Response
             header(
                 "Content-Security-Policy: default-src 'self'; "
                 . "img-src 'self' data: https:; "
-                . "media-src 'self' https: blob:; "
+                . "media-src 'self' https: blob: data:; "
                 . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://netdna.bootstrapcdn.com; "
                 . "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://netdna.bootstrapcdn.com; "
                 . "script-src 'self' 'unsafe-inline'; "
-                . "connect-src 'self'; "
-                . "frame-src 'self'; "
+                . "connect-src 'self' https:; "
+                . "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://drive.google.com; "
                 . "object-src 'none'; base-uri 'self'; form-action 'self'"
             );
             foreach ($this->headers as $name => $value) {

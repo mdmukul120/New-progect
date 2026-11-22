@@ -6,13 +6,15 @@
  * @var array<int,array<string,mixed>> $links
  * @var array<string,mixed> $site
  */
+$watchUrl = '/' . $item['type'] . '/' . $item['slug'] . '#watch';
 ?>
 <div class="shell">
   <div class="listing-head">
     <div>
       <h1>⬇️ <?= e($item['title']) ?></h1>
-      <p>Choose a quality below — every link opens directly, no shortener.</p>
+      <p>Choose a quality below — one-click direct download or instant stream, zero ad-gates.</p>
     </div>
+    <a class="btn btn-ghost" href="<?= e($watchUrl) ?>">▶ Watch Online</a>
   </div>
 
   <?php if ($links === []): ?>
@@ -28,7 +30,16 @@
             <b><?= e($link['label']) ?></b>
             <small><?= e(trim(($link['quality'] ?? '') . ' • ' . ($link['size'] ?? ''), ' •')) ?></small>
           </div>
-          <a class="btn btn-primary" href="<?= e($link['url']) ?>" rel="noopener nofollow" target="_blank">Download</a>
+          <div class="dl-actions">
+            <a class="btn btn-ghost" href="<?= e($watchUrl) ?>">▶ Watch</a>
+            <a class="btn btn-primary"
+               href="<?= e($link['url']) ?>"
+               download="<?= e($link['filename'] ?? '') ?>"
+               <?php if (!empty($link['is_cors_download']) && !empty($link['direct_url'])): ?>
+                 data-download-direct="<?= e($link['direct_url']) ?>"
+                 data-download-name="<?= e($link['filename'] ?? 'video.mp4') ?>"
+               <?php endif; ?>>⬇ Download</a>
+          </div>
         </div>
       <?php endforeach; ?>
     </div>

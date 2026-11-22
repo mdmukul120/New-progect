@@ -118,6 +118,35 @@ check('top-10 rail rendered', str_contains($home, 'rank-item'));
 check('listing renders cards', substr_count($listing, '<article class="card"') >= 12);
 check('listing paginates', str_contains($listing, 'class="pagination"') || str_contains($listing, 'Next →'));
 
+// -------------------------------------------------- player, search, pagination, dl
+echo PHP_EOL, 'Player, Search, Pagination & Downloads', PHP_EOL;
+[$status, $page2] = http($base . '/page/2');
+check('/page/2 renders cards', $status === 200 && substr_count($page2, '<article class="card"') >= 12);
+foreach (['/latest/page/2', '/ongoing/page/1', '/trending/page/2', '/anime/page/1', '/drama/page/1', '/southIndian/page/1', '/adult18plus/page/1', '/category/wwe'] as $pRoute) {
+    [$st] = http($base . $pRoute);
+    check("GET {$pRoute} returns 200", $st === 200, "got {$st}");
+}
+
+[$status, $titleHtml] = http($base . '/movie/mKs_ke565egbpavzhjtgnsncyjx6wm');
+check('title page renders <video id="mlbdVideo">', $status === 200 && str_contains($titleHtml, 'id="mlbdVideo"'));
+check('title page has zero dead movielinkbd.tv/dl links', !str_contains($titleHtml, 'movielinkbd.tv/dl/'));
+
+[$status, $seriesHtml] = http($base . '/series/mKs_4cuyl3mus7w2ylif3rlyrnsmjq');
+check('series page renders interactive episode chips', $status === 200 && str_contains($seriesHtml, 'data-ep-code="S20E01"'));
+
+[$status, $adultTitleHtml] = http($base . '/movie/download18plus/mKs_ew4ye775w66achcvzncsbhrykq');
+check('multi-segment 18+ slug route returns 200', $status === 200 && str_contains($adultTitleHtml, 'id="mlbdVideo"'));
+
+[$status, , $dlHeaders] = http($base . '/dl/mKs_ke565egbpavzhjtgnsncyjx6wm?q=720p');
+check('/dl/{slug} redirects (302) to live MP4', $status === 302 && str_ends_with((string) ($dlHeaders['location'] ?? ''), '.mp4'));
+
+[$status, $searchHtml] = http($base . '/search?q=jailer');
+check('case-insensitive /search?q=jailer finds title', $status === 200 && str_contains($searchHtml, 'Jailer'));
+
+[$status, $suggestRaw] = http($base . '/api/suggest.json?q=jailer');
+$suggestJson = json_decode($suggestRaw, true);
+check('/api/suggest.json?q=jailer returns views_human', $status === 200 && !empty($suggestJson['data'][0]['views_human']));
+
 // ------------------------------------------------------------- security
 echo PHP_EOL, 'Security', PHP_EOL;
 [$status, $body] = http($base . '/admin');

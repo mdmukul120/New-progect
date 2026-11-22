@@ -425,20 +425,21 @@ final class Installer
     private static function downloadVariants(array $title): array
     {
         $quality = $title['quality'] ?: 'WEB-DL';
-        $base = 'https://movielinkbd.tv/dl/' . rawurlencode((string) $title['slug']);
+        $slug = implode('/', array_map('rawurlencode', explode('/', (string) $title['slug'])));
+        $base = '/dl/' . $slug;
         $variants = [
-            ['480p HEVC', '480p', '~320 MB'],
-            ['720p HEVC', '720p', '~720 MB'],
-            ['1080p HEVC', '1080p', '~1.4 GB'],
-            ['1080p x264', '1080p', '~2.1 GB'],
+            ['480p HEVC', '480p', '~320 MB', '480p'],
+            ['720p HEVC', '720p', '~720 MB', '720p'],
+            ['1080p HEVC', '1080p', '~1.4 GB', '1080p'],
+            ['1080p x264', '1080p', '~2.1 GB', '1080p-x264'],
         ];
         $rows = [];
-        foreach ($variants as $index => [$label, $q, $size]) {
+        foreach ($variants as $index => [$label, $q, $size, $param]) {
             $rows[] = [
                 'label' => $label . ' · ' . $quality,
                 'quality' => $q,
                 'size' => $size,
-                'url' => $base . '?q=' . $q . '&src=web',
+                'url' => $base . '?q=' . $param,
                 'sort' => $index,
             ];
         }

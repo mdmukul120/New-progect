@@ -50,6 +50,7 @@ $sorts = [
         'page' => $result['page'],
         'pages' => $result['pages'],
         'paginationBase' => $paginationBase,
+        'paginationSuffix' => $paginationSuffix ?? '',
     ]) ?>
   <?php endif; ?>
 </div>

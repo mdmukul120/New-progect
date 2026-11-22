@@ -5,6 +5,7 @@
  * @var int $page
  * @var int $pages
  * @var string $paginationBase
+ * @var string|null $paginationSuffix
  */
 $page = max(1, (int) $page);
 $pages = max(1, (int) $pages);
@@ -12,6 +13,7 @@ if ($pages < 2) {
     return;
 }
 
+$suffix = (string) ($paginationSuffix ?? '');
 $window = 2;
 $numbers = [];
 for ($i = 1; $i <= $pages; $i++) {
@@ -20,7 +22,7 @@ for ($i = 1; $i <= $pages; $i++) {
     }
 }
 
-$link = static fn (int $n): string => url($paginationBase . $n);
+$link = static fn (int $n): string => url($paginationBase . $n . $suffix);
 ?>
 <nav class="pagination" aria-label="Pagination">
   <?php if ($page > 1): ?>

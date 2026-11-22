@@ -14,6 +14,7 @@ namespace App\Controller;
 
 use App\Core\App;
 use App\Core\Config;
+use App\Core\MediaCatalog;
 use App\Core\Request;
 use App\Core\Response;
 
@@ -76,9 +77,10 @@ final class WebController
     }
 
     /** Friendly aliases used by the old site: /anime /drama /southIndian /adult18plus */
-    public function typeAlias(Request $request): Response
+    public function typeAlias(Request $request, ?string $page = null): Response
     {
-        $path = trim($request->path(), '/');
+        $rawPath = trim($request->path(), '/');
+        $path = (string) preg_replace('~/page/\d+$~', '', $rawPath);
         $map = [
             'anime' => ['type' => 'anime', 'title' => '🍥 Anime Zone'],
             'drama' => ['type' => 'drama', 'title' => '🇰🇷 K/J/C Drama'],
@@ -94,8 +96,26 @@ final class WebController
         $noindex = (bool) ($config['noindex'] ?? false);
         unset($config['noindex']);
 
-        return $this->listing($request, $config + ['sort' => 'recent'], $title, '/' . $path,
-            $request->int('page', 1), $noindex);
+        $sort = $request->string('sort', 'recent');
+        $pageNo = (int) ($page ?? $request->int('page', 1));
+
+        return $this->listing($request, $config + ['sort' => $sort], $title, '/' . $path, $pageNo, $noindex);
+    }
+
+    public function category(Request $request, string $slug, ?string $page = null): Response
+    {
+        $clean = strtolower(trim($slug));
+        $pageNo = (int) ($page ?? $request->int('page', 1));
+        $sort = $request->string('sort', 'recent');
+
+        if ($clean === 'wwe' || $clean === 'sports') {
+            return $this->listing($request, ['genre' => 'sports', 'sort' => $sort], '🤼 WWE & Sports', '/category/' . $slug, $pageNo);
+        }
+        $genre = $this->app->genres()->find($clean);
+        if ($genre !== null) {
+            return $this->listing($request, ['genre' => $clean, 'sort' => $sort], (string) $genre['name'], '/category/' . $slug, $pageNo);
+        }
+        return $this->listing($request, ['q' => str_replace('-', ' ', $clean), 'sort' => $sort], ucfirst(str_replace('-', ' ', $slug)), '/category/' . $slug, $pageNo);
     }
 
     public function language(Request $request, string $slug, ?string $page = null): Response
@@ -181,6 +201,16 @@ final class WebController
 
         $result = $this->app->titles()->search($params);
 
+        $queryArgs = array_filter([
+            'q' => $q,
+            'type' => $params['type'],
+            'language' => $params['language'],
+            'genre' => $params['genre'],
+            'sort' => $params['sort'] !== 'recent' ? $params['sort'] : '',
+            'adult' => $request->bool('adult') ? '1' : '',
+        ], static fn (string $v): bool => $v !== '');
+        $paginationBase = '/search?' . ($queryArgs !== [] ? http_build_query($queryArgs) . '&' : '') . 'page=';
+
         return $this->renderPage('pages/search', [
             'title' => ($q !== '' ? 'Search: ' . $q . ' — ' : 'Search — ') . (string) Config::get('site.name'),
             'description' => 'Search movies, series, anime and drama on MovieLinkBD.',
@@ -193,7 +223,7 @@ final class WebController
                 'genre' => $params['genre'],
                 'sort' => $params['sort'],
             ],
-            'paginationBase' => '/search?' . http_build_query(['q' => $q]) . '&page=',
+            'paginationBase' => $paginationBase,
             'page' => $result['page'],
             'pages' => $result['pages'],
             'total' => $result['total'],
@@ -203,7 +233,7 @@ final class WebController
         ]);
     }
 
-    public function upcoming(Request $request): Response
+    public function upcoming(Request $request, ?string $page = null): Response
     {
         $items = $this->app->titles()->upcoming(36);
         return $this->renderPage('pages/upcoming', [
@@ -213,28 +243,28 @@ final class WebController
         ]);
     }
 
-    public function latest(Request $request): Response
+    public function latest(Request $request, ?string $page = null): Response
     {
-        return $this->listing($request, ['sort' => 'latest'], '🆕 Latest Published', '/latest',
-            $request->int('page', 1));
+        return $this->listing($request, ['sort' => $request->string('sort', 'latest')], '🆕 Latest Published', '/latest',
+            (int) ($page ?? $request->int('page', 1)));
     }
 
-    public function ongoing(Request $request): Response
+    public function ongoing(Request $request, ?string $page = null): Response
     {
-        return $this->listing($request, ['status' => 'ongoing', 'sort' => 'recent'], '⏳ Ongoing Series',
-            '/ongoing', $request->int('page', 1));
+        return $this->listing($request, ['status' => 'ongoing', 'sort' => $request->string('sort', 'recent')], '⏳ Ongoing Series',
+            '/ongoing', (int) ($page ?? $request->int('page', 1)));
     }
 
-    public function trending(Request $request): Response
+    public function trending(Request $request, ?string $page = null): Response
     {
-        return $this->listing($request, ['sort' => 'views'], '🔥 Trending Now', '/trending',
-            $request->int('page', 1));
+        return $this->listing($request, ['sort' => $request->string('sort', 'views')], '🔥 Trending Now', '/trending',
+            (int) ($page ?? $request->int('page', 1)));
     }
 
-    public function live(Request $request): Response
+    public function live(Request $request, ?string $page = null): Response
     {
-        return $this->listing($request, ['status' => 'ongoing', 'sort' => 'recent'], '📡 Live & Ongoing',
-            '/live', 1);
+        return $this->listing($request, ['status' => 'ongoing', 'sort' => $request->string('sort', 'recent')], '📡 Live & Ongoing',
+            '/live', (int) ($page ?? $request->int('page', 1)));
     }
 
     // -------------------------------------------------------- title page
@@ -251,6 +281,32 @@ final class WebController
 
         $this->app->titles()->incrementViews((int) $title['id']);
 
+        $rawLinks = $this->app->titles()->downloadLinks((int) $title['id']);
+        $episodes = $this->app->titles()->episodes((int) $title['id']);
+
+        $requestedEp = strtoupper($request->string('ep'));
+        $activeEpIndex = 0;
+        $activeEpisode = null;
+        foreach ($episodes as $idx => $ep) {
+            $code = sprintf('S%02dE%02d', (int) $ep['season'], (int) $ep['episode']);
+            $episodes[$idx]['code'] = $code;
+            $episodes[$idx]['stream_fast'] = MediaCatalog::fastStreamUrl($title, '720p', $idx);
+            $episodes[$idx]['stream_hd'] = MediaCatalog::fastStreamUrl($title, '1080p', $idx);
+            $episodes[$idx]['stream_cinema'] = MediaCatalog::cinemaStreamUrl($title, $idx);
+            $episodes[$idx]['dl_href'] = url('/dl/' . implode('/', array_map('rawurlencode', explode('/', (string) $title['slug']))))
+                . '?q=720p&ep=' . $idx;
+            $episodes[$idx]['filename'] = MediaCatalog::filename($title, '720p', $code);
+            if ($requestedEp !== '' && ($requestedEp === $code || $requestedEp === 'E' . str_pad((string) $ep['episode'], 2, '0', STR_PAD_LEFT))) {
+                $activeEpIndex = $idx;
+            }
+        }
+        if ($episodes !== []) {
+            $activeEpisode = $episodes[$activeEpIndex] ?? $episodes[0];
+        }
+
+        $links = MediaCatalog::normaliseLinks($title, $rawLinks);
+        $servers = MediaCatalog::servers($title, $rawLinks, $activeEpIndex);
+
         return $this->renderPage('pages/title', [
             'title' => (string) $title['title'] . ' — Download & Watch | ' . (string) Config::get('site.name'),
             'description' => mb_substr(
@@ -261,8 +317,11 @@ final class WebController
             'ogImage' => (string) ($title['poster'] ?: Config::get('site.og_image')),
             'noindex' => (bool) $title['is_adult'],
             'item' => $title,
-            'links' => $this->app->titles()->downloadLinks((int) $title['id']),
-            'episodes' => $this->app->titles()->episodes((int) $title['id']),
+            'links' => $links,
+            'servers' => $servers,
+            'episodes' => $episodes,
+            'activeEpisode' => $activeEpisode,
+            'activeEpIndex' => $activeEpIndex,
             'related' => $this->app->titles()->related($title, 8),
             'breadcrumb' => [
                 ['name' => 'Home', 'url' => '/'],
@@ -278,12 +337,28 @@ final class WebController
         if ($title === null) {
             return $this->notFound($request);
         }
+        $rawLinks = $this->app->titles()->downloadLinks((int) $title['id']);
         return $this->renderPage('pages/download', [
             'title' => 'Download ' . (string) $title['title'] . ' — ' . (string) Config::get('site.name'),
             'noindex' => true,
             'item' => $title,
-            'links' => $this->app->titles()->downloadLinks((int) $title['id']),
+            'links' => MediaCatalog::normaliseLinks($title, $rawLinks),
         ]);
+    }
+
+    /** First-party `/dl/{slug}` endpoint: resolves to a live HTTPS `.mp4` stream. */
+    public function directDownload(Request $request, string $slug): Response
+    {
+        $title = $this->app->titles()->find($slug);
+        if ($title === null) {
+            return $this->notFound($request);
+        }
+        $rawLinks = $this->app->titles()->downloadLinks((int) $title['id']);
+        $quality = $request->string('q', '720p');
+        $epOffset = max(0, $request->int('ep', 0));
+        $target = MediaCatalog::resolveDownloadTarget($title, $rawLinks, $quality, $epOffset);
+
+        return Response::redirect($target, 302)->withHeader('Cache-Control', 'no-store');
     }
 
     /** Static info pages stored in the `pages` table (about, faq, dmca, privacy). */
@@ -335,6 +410,12 @@ final class WebController
         }
         $result = $this->app->titles()->search($params);
 
+        $extraQuery = array_filter([
+            'sort' => $request->string('sort'),
+            'adult' => $request->bool('adult') ? '1' : '',
+        ], static fn (string $v): bool => $v !== '');
+        $paginationSuffix = $extraQuery !== [] ? '?' . http_build_query($extraQuery) : '';
+
         return $this->renderPage('pages/listing', [
             'title' => $heading . ' — ' . (string) Config::get('site.name'),
             'description' => $description !== '' ? $description : $heading . ' — browsable archive, completely ad-free.',
@@ -342,6 +423,7 @@ final class WebController
             'heading' => $heading,
             'result' => $result,
             'paginationBase' => $base . '/page/',
+            'paginationSuffix' => $paginationSuffix,
             'page' => $result['page'],
             'pages' => $result['pages'],
             'total' => $result['total'],

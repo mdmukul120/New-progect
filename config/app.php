@@ -29,7 +29,7 @@ return [
     ],
 
     'security' => [
-        'rate_limit_per_minute' => Env::int('RATE_LIMIT_PER_MINUTE', 90),
+        'rate_limit_per_minute' => Env::int('RATE_LIMIT_PER_MINUTE', 300),
         'session_hours' => Env::int('ADMIN_SESSION_HOURS', 12),
     ],
 ];

@@ -38,10 +38,14 @@ final class Router
     {
         $params = [];
         $regex = preg_replace_callback(
-            '~\{([a-zA-Z_][a-zA-Z0-9_]*)(\?)?\}~',
+            '~\{([a-zA-Z_][a-zA-Z0-9_]*)([?+])?\}~',
             static function (array $m) use (&$params): string {
                 $params[] = $m[1];
-                return $m[2] ?? '' ? '([^/]*)' : '([^/]+)';
+                return match ($m[2] ?? '') {
+                    '?' => '([^/]*)',
+                    '+' => '(.+)',
+                    default => '([^/]+)',
+                };
             },
             $path
         );
@@ -70,6 +74,8 @@ final class Router
         $this->get('/language/{slug}/page/{page}', $c, 'language');
         $this->get('/genre/{slug}', $c, 'genre');
         $this->get('/genre/{slug}/page/{page}', $c, 'genre');
+        $this->get('/category/{slug}', $c, 'category');
+        $this->get('/category/{slug}/page/{page}', $c, 'category');
         $this->get('/collections', $c, 'collections');
         $this->get('/collection/{slug}', $c, 'collection');
         $this->get('/collection/{slug}/page/{page}', $c, 'collection');
@@ -79,17 +85,28 @@ final class Router
         $this->get('/search', $c, 'search');
         $this->get('/search/page/{page}', $c, 'search');
         $this->get('/upcoming', $c, 'upcoming');
+        $this->get('/upcoming/page/{page}', $c, 'upcoming');
         $this->get('/latest', $c, 'latest');
+        $this->get('/latest/page/{page}', $c, 'latest');
         $this->get('/ongoing', $c, 'ongoing');
+        $this->get('/ongoing/page/{page}', $c, 'ongoing');
         $this->get('/trending', $c, 'trending');
+        $this->get('/trending/page/{page}', $c, 'trending');
         $this->get('/anime', $c, 'typeAlias');
+        $this->get('/anime/page/{page}', $c, 'typeAlias');
         $this->get('/drama', $c, 'typeAlias');
+        $this->get('/drama/page/{page}', $c, 'typeAlias');
         $this->get('/southIndian', $c, 'typeAlias');
+        $this->get('/southIndian/page/{page}', $c, 'typeAlias');
         $this->get('/adult18plus', $c, 'typeAlias');
+        $this->get('/adult18plus/page/{page}', $c, 'typeAlias');
         $this->get('/live', $c, 'live');
+        $this->get('/live/page/{page}', $c, 'live');
         $this->get('/info/{slug}', $c, 'info');
-        $this->get('/download/{type}/{slug}', $c, 'download');
-        $this->get('/continue/{key}', $c, 'continueTo');
+        $this->get('/dl/{slug+}', $c, 'directDownload');
+        $this->get('/watch/{type}/{slug+}', $c, 'title');
+        $this->get('/download/{type}/{slug+}', $c, 'download');
+        $this->get('/continue/{key+}', $c, 'continueTo');
 
         // ------------------------------------------------- admin
         $this->get('/admin', $m, 'dashboard');
@@ -108,7 +125,7 @@ final class Router
         $this->get('/api/index.json', $a, 'indexJson');
         $this->get('/api/health.json', $a, 'health');
         $this->get('/api/titles.json', $a, 'titles');
-        $this->get('/api/titles/{slug}.json', $a, 'title');
+        $this->get('/api/titles/{slug+}.json', $a, 'title');
         $this->get('/api/search.json', $a, 'search');
         $this->get('/api/suggest.json', $a, 'suggest');
         $this->get('/api/trending.json', $a, 'trending');
@@ -134,7 +151,7 @@ final class Router
 
         // ---------------------------------------------- catch-all (last!)
         // Registered last so it can never swallow /api, /admin or sitemap routes.
-        $this->get('/{type}/{slug}', $c, 'title');
+        $this->get('/{type}/{slug+}', $c, 'title');
     }
 
     public function dispatch(string $method, string $uri): Response
