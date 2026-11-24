@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0d12" />
+<title>হাইব্রিড চ্যাট — Ollama + OpenRouter ফ্রি</title>
+<meta name="description" content="একটি ফ্রি AI চ্যাট অ্যাপ: লোকালি চালালে Ollama ব্যবহার করে, হোস্ট করলে OpenRouter-এর ফ্রি মডেল দিয়ে চলে। কোনো বিল্ড স্টেপ নেই।" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%237c5cff'/%3E%3Ctext x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='sans-serif'%3EH%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#0b0d12; --panel:#111520; --panel2:#161b27; --panel3:#1c2231;
+    --line:#242c3d; --text:#e8edf7; --muted:#8b97ad; --muted2:#63708a;
+    --accent:#7c5cff; --accent-soft:#7c5cff22; --cyan:#22d3ee; --ok:#37d67a; --warn:#ffb454; --err:#ff6b81;
+    --radius:14px; --maxw:820px;
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Bengali", "Hind Siliguri", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--bg); color:var(--text); font-family:var(--font);
+    font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
+  }
+  ::selection{background:var(--accent-soft)}
+  button,input,textarea,select{font-family:inherit; font-size:inherit; color:inherit}
+  button{cursor:pointer; border:none; background:none}
+  a{color:var(--cyan)}
+  .hidden{display:none !important}
+
+  /* ---------- layout ---------- */
+  .app{display:flex; height:100dvh; overflow:hidden}
+  aside{
+    width:270px; flex:0 0 270px; background:var(--panel); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; min-height:0;
+  }
+  .brand{display:flex; align-items:center; gap:10px; padding:16px 16px 12px}
+  .logo{
+    width:32px;height:32px;border-radius:10px;flex:0 0 32px;
+    background:linear-gradient(135deg,var(--accent),#4f46e5 60%,var(--cyan));
+    display:grid;place-items:center;font-weight:800;color:#fff;font-size:15px;
+    box-shadow:0 6px 18px #7c5cff40;
+  }
+  .brand b{font-size:14.5px; letter-spacing:.2px}
+  .brand small{display:block; color:var(--muted2); font-size:11px; line-height:1.2}
+  .newchat{
+    margin:6px 12px 10px; padding:10px 12px; border-radius:10px; display:flex; align-items:center; gap:8px;
+    background:var(--panel2); border:1px solid var(--line); font-weight:600; font-size:13.5px; width:calc(100% - 24px);
+    transition:.15s;
+  }
+  .newchat:hover{background:var(--panel3); border-color:#313b52}
+  .chatlist{flex:1; overflow-y:auto; padding:4px 8px 8px; min-height:0}
+  .chatlist-h{font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted2); padding:8px 8px 4px}
+  .chatitem{
+    display:flex; align-items:center; gap:6px; padding:8px 8px 8px 10px; border-radius:9px; cursor:pointer;
+    color:var(--muted); font-size:13.5px; transition:.12s;
+  }
+  .chatitem:hover{background:var(--panel2); color:var(--text)}
+  .chatitem.active{background:var(--accent-soft); color:#cfc8ff}
+  .chatitem .t{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .chatitem .del{opacity:0; padding:2px 5px; border-radius:6px; color:var(--muted2); font-size:13px; flex:0 0 auto}
+  .chatitem:hover .del{opacity:1}
+  .chatitem .del:hover{background:#ff6b8122; color:var(--err)}
+  .sidefoot{border-top:1px solid var(--line); padding:10px}
+  .sidebtn{
+    width:100%; text-align:left; padding:9px 10px; border-radius:9px; display:flex; align-items:center; gap:9px;
+    font-size:13px; color:var(--muted); transition:.12s;
+  }
+  .sidebtn:hover{background:var(--panel2); color:var(--text)}
+  .dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px;background:var(--muted2)}
+  .dot.ok{background:var(--ok); box-shadow:0 0 8px var(--ok)}
+  .dot.local{background:var(--cyan); box-shadow:0 0 8px var(--cyan)}
+
+  main{flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; position:relative}
+  header{
+    display:flex; align-items:center; gap:10px; padding:10px 14px; border-bottom:1px solid var(--line);
+    background:color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter:blur(10px);
+    position:sticky; top:0; z-index:5;
+  }
+  .iconbtn{
+    width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--muted);
+    transition:.12s; flex:0 0 auto;
+  }
+  .iconbtn:hover{background:var(--panel2); color:var(--text)}
+  .htitle{flex:1; min-width:0}
+  .htitle b{display:block; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .htitle span{font-size:11.5px; color:var(--muted2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block}
+  .chip{
+    font-size:11.5px; padding:4px 9px; border-radius:999px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--muted); display:inline-flex; align-items:center; gap:6px;
+    max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .chip b{color:var(--text); font-weight:600; overflow:hidden; text-overflow:ellipsis}
+
+  .stream{flex:1; overflow-y:auto; min-height:0; scroll-behavior:smooth}
+  .stream-in{max-width:var(--maxw); margin:0 auto; padding:22px 18px 8px}
+
+  /* ---------- messages ---------- */
+  .msg{display:flex; gap:12px; margin-bottom:22px; animation:fade .25s ease}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)}to{opacity:1; transform:none}}
+  .av{
+    width:28px;height:28px;border-radius:9px;flex:0 0 28px;display:grid;place-items:center;
+    font-size:12px;font-weight:700; margin-top:2px;
+  }
+  .msg.user .av{background:var(--panel3); color:var(--muted); border:1px solid var(--line)}
+  .msg.assistant .av{background:linear-gradient(135deg,var(--accent),#4f46e5); color:#fff}
+  .body{min-width:0; flex:1}
+  .who{font-size:11.5px; color:var(--muted2); margin-bottom:5px; display:flex; gap:8px; align-items:center}
+  .who .m{font-size:10.5px; padding:1px 6px; border-radius:5px; background:var(--panel2); border:1px solid var(--line); color:var(--muted2)}
+  .content{word-wrap:break-word; overflow-wrap:anywhere}
+  .msg.user .content{color:#dfe6f5}
+  .content p{margin:0 0 .75em}
+  .content p:last-child{margin-bottom:0}
+  .content h2,.content h3,.content h4,.content h5{margin:1.1em 0 .45em; line-height:1.3; font-size:1.05em}
+  .content h2{font-size:1.22em}
+  .content ul,.content ol{margin:.3em 0 .8em; padding-left:1.35em}
+  .content li{margin:.22em 0}
+  .content blockquote{margin:.7em 0; padding:.1em 0 .1em .9em; border-left:2px solid var(--accent); color:var(--muted)}
+  .content code{font-family:var(--mono); font-size:.88em; background:var(--panel3); padding:.14em .38em; border-radius:5px; border:1px solid var(--line)}
+  .content pre{margin:.7em 0; background:#0a0c11; border:1px solid var(--line); border-radius:11px; overflow:hidden}
+  .prehead{display:flex; align-items:center; justify-content:space-between; padding:6px 10px; border-bottom:1px solid var(--line); background:var(--panel2)}
+  .prehead span{font-size:11px; color:var(--muted2); font-family:var(--mono); text-transform:lowercase}
+  .prehead button{font-size:11px; color:var(--muted); padding:2px 7px; border-radius:6px}
+  .prehead button:hover{background:var(--panel3); color:var(--text)}
+  .content pre code{display:block; padding:12px 13px; background:none; border:none; overflow-x:auto; font-size:12.5px; line-height:1.6; white-space:pre}
+  .content table{border-collapse:collapse; margin:.7em 0; font-size:.93em; display:block; overflow-x:auto}
+  .content th,.content td{border:1px solid var(--line); padding:6px 10px; text-align:left}
+  .content th{background:var(--panel2)}
+  .content hr{border:none; border-top:1px solid var(--line); margin:1.2em 0}
+  .msgacts{display:flex; gap:4px; margin-top:8px; opacity:0; transition:.15s}
+  .msg:hover .msgacts{opacity:1}
+  .msgacts button{font-size:11.5px; color:var(--muted2); padding:3px 8px; border-radius:6px; display:inline-flex; gap:5px; align-items:center}
+  .msgacts button:hover{background:var(--panel2); color:var(--text)}
+  .errbox{
+    border:1px solid #ff6b8155; background:#ff6b8110; color:#ffc3cc; border-radius:11px;
+    padding:11px 13px; font-size:13.5px; margin:.2em 0
+  }
+  .errbox b{color:#ffd0d8}
+  .errbox code{background:#00000040; border-color:#ff6b8133; color:#ffd7de}
+  .cursor{display:inline-block; width:7px; height:1.05em; background:var(--accent); vertical-align:-2px; margin-left:2px; animation:blink 1s steps(2,start) infinite; border-radius:1px}
+  @keyframes blink{50%{opacity:0}}
+
+  /* ---------- welcome ---------- */
+  .welcome{max-width:var(--maxw); margin:0 auto; padding:8vh 20px 20px; text-align:center}
+  .welcome h1{font-size:26px; margin:0 0 8px; letter-spacing:-.02em}
+  .welcome h1 em{font-style:normal; background:linear-gradient(90deg,var(--accent),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent}
+  .welcome > p{color:var(--muted); margin:0 auto 22px; max-width:520px; font-size:14px}
+  .cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; text-align:left; margin-bottom:18px}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:14px;
+    cursor:pointer; transition:.15s;
+  }
+  .card:hover{border-color:#3a4560; background:var(--panel2); transform:translateY(-1px)}
+  .card b{display:block; font-size:13.5px; margin-bottom:3px}
+  .card span{font-size:12.5px; color:var(--muted); line-height:1.5; display:block}
+  .card .tag{font-size:10.5px; padding:1px 7px; border-radius:999px; background:var(--accent-soft); color:#c6bcff; display:inline-block; margin-bottom:7px}
+
+  /* ---------- composer ---------- */
+  .composer-wrap{padding:0 14px 12px; background:linear-gradient(180deg, transparent, var(--bg) 30%)}
+  .composer{
+    max-width:var(--maxw); margin:0 auto; background:var(--panel2); border:1px solid var(--line);
+    border-radius:16px; padding:8px 8px 8px 14px; display:flex; gap:8px; align-items:flex-end;
+    transition:.15s; box-shadow:0 10px 30px #00000040;
+  }
+  .composer:focus-within{border-color:#4a3fa8; box-shadow:0 0 0 3px #7c5cff1f, 0 10px 30px #00000040}
+  .composer textarea{
+    flex:1; background:none; border:none; outline:none; resize:none; padding:8px 0;
+    max-height:200px; line-height:1.55; font-size:14.5px;
+  }
+  .composer textarea::placeholder{color:var(--muted2)}
+  .send{
+    width:38px;height:38px;border-radius:11px;flex:0 0 38px; display:grid; place-items:center;
+    background:linear-gradient(135deg,var(--accent),#5b46e0); color:#fff; transition:.15s;
+    box-shadow:0 6px 16px #7c5cff33;
+  }
+  .send:disabled{opacity:.4; box-shadow:none; cursor:not-allowed}
+  .send.stop{background:linear-gradient(135deg,#ff6b81,#e0405a); box-shadow:0 6px 16px #ff6b8133}
+  .foot-hint{max-width:var(--maxw); margin:8px auto 0; font-size:11px; color:var(--muted2); text-align:center}
+  .foot-hint kbd{font-family:var(--mono); font-size:10.5px; background:var(--panel2); border:1px solid var(--line); border-radius:4px; padding:0 4px}
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:#05070bcc; backdrop-filter:blur(3px); z-index:50;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal{
+    background:var(--panel); border:1px solid var(--line); border-radius:18px; width:100%; max-width:560px;
+    max-height:90dvh; overflow-y:auto; box-shadow:0 30px 80px #00000080;
+  }
+  .modal-h{display:flex; align-items:center; justify-content:space-between; padding:16px 18px 10px; position:sticky; top:0; background:var(--panel); z-index:2}
+  .modal-h b{font-size:15.5px}
+  .modal-b{padding:0 18px 18px}
+  .field{margin-bottom:16px}
+  .field > label{display:block; font-size:12.5px; font-weight:600; margin-bottom:6px; color:#cfd8ea}
+  .field .hint{font-size:11.5px; color:var(--muted2); margin-top:5px; line-height:1.5}
+  .field .hint a{color:#9d8dff}
+  .inp{
+    width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    padding:9px 11px; outline:none; font-size:13.5px; transition:.15s;
+  }
+  .inp:focus{border-color:#4a3fa8; box-shadow:0 0 0 3px #7c5cff1a}
+  textarea.inp{resize:vertical; min-height:64px; line-height:1.55}
+  select.inp{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238b97ad' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; padding-right:30px}
+  .segs{display:flex; gap:6px; background:var(--panel2); padding:4px; border-radius:11px; border:1px solid var(--line)}
+  .segs button{
+    flex:1; padding:7px 6px; border-radius:8px; font-size:12.5px; color:var(--muted); font-weight:600; transition:.12s;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .segs button.on{background:var(--panel3); color:var(--text); box-shadow:0 1px 3px #00000055}
+  .row{display:flex; gap:8px}
+  .row .inp{flex:1}
+  .btn{
+    padding:9px 14px; border-radius:10px; font-size:13px; font-weight:600; transition:.15s;
+    background:var(--panel3); border:1px solid var(--line); color:var(--text); white-space:nowrap;
+  }
+  .btn:hover{background:#232b3d}
+  .btn.primary{background:linear-gradient(135deg,var(--accent),#5b46e0); border-color:transparent; color:#fff}
+  .btn.primary:hover{filter:brightness(1.08)}
+  .btn.ghost{background:none}
+  .btn:disabled{opacity:.5; cursor:not-allowed}
+  .modal-f{display:flex; gap:8px; justify-content:flex-end; padding:12px 18px 18px; position:sticky; bottom:0; background:linear-gradient(180deg,transparent,var(--panel) 40%)}
+  .status{font-size:12px; margin-top:8px; min-height:16px; line-height:1.5}
+  .status.ok{color:var(--ok)}
+  .status.err{color:var(--err)}
+  .status.busy{color:var(--warn)}
+  .inline-note{background:var(--accent-soft); border:1px solid #7c5cff33; border-radius:10px; padding:10px 12px; font-size:12.5px; color:#cfc8ff; line-height:1.6; margin-bottom:16px}
+  .switch{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); cursor:pointer; user-select:none}
+  .switch input{accent-color:var(--accent); width:15px; height:15px}
+  .range{display:flex; align-items:center; gap:10px}
+  .range input[type=range]{flex:1; accent-color:var(--accent)}
+  .range output{font-family:var(--mono); font-size:12px; color:var(--muted); min-width:34px; text-align:right}
+
+  /* mobile */
+  .scrim{position:fixed; inset:0; background:#05070b99; z-index:30}
+  @media (max-width:760px){
+    aside{
+      position:fixed; inset:0 auto 0 0; z-index:40; transform:translateX(-102%);
+      transition:transform .22s ease; box-shadow:20px 0 50px #00000066; width:284px; flex-basis:284px;
+    }
+    aside.open{transform:none}
+    .stream-in{padding:16px 13px 4px}
+    .msg{gap:9px}
+    .welcome{padding-top:5vh}
+    .welcome h1{font-size:21px}
+    .composer-wrap{padding:0 9px 8px}
+    .msgacts{opacity:1}
+    .foot-hint{display:none}
+  }
+  @media (display-mode:standalone){.foot-hint{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside id="sidebar">
+    <div class="brand">
+      <div class="logo">H</div>
+      <div>
+        <b>হাইব্রিড চ্যাট</b>
+        <small>Ollama · OpenRouter ফ্রি</small>
+      </div>
+    </div>
+    <button class="newchat" id="btnNew">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      নতুন চ্যাট
+    </button>
+    <div class="chatlist" id="chatList"></div>
+    <div class="sidefoot">
+      <button class="sidebtn" id="btnSettings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+        সেটিংস
+      </button>
+      <div class="sidebtn" style="cursor:default" id="connBadge">
+        <span class="dot" id="connDot"></span>
+        <span id="connText" style="font-size:12px">কনফিগার হয়নি</span>
+      </div>
+      <div style="padding:6px 10px 2px; font-size:10.5px; color:var(--muted2); line-height:1.5">
+        চ্যাট এই ব্রাউজারেই থাকে। কোনো সার্ভারে যায় না।
+      </div>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <button class="iconbtn hidden" id="btnMenu" aria-label="মেনু">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="htitle">
+        <b id="hTitle">নতুন চ্যাট</b>
+        <span id="hSub">ফ্রি মডেল · কোনো সাবস্ক্রিপশন নেই</span>
+      </div>
+      <span class="chip" id="modelChip"><b id="modelChipText">মডেল নেই</b></span>
+      <button class="iconbtn" id="btnSettings2" aria-label="সেটিংস" title="সেটিংস">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.4 9v.09a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1z"/></svg>
+      </button>
+    </header>
+
+    <div class="stream" id="stream"><div class="stream-in" id="streamIn"></div></div>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <textarea id="input" rows="1" placeholder="কিছু লিখুন…  (Enter = পাঠান, Shift+Enter = নতুন লাইন)" autocomplete="off"></textarea>
+        <button class="send" id="btnSend" aria-label="পাঠান">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+        </button>
+      </div>
+      <div class="foot-hint">
+        <kbd>Enter</kbd> পাঠান · টিপস: ফ্রি লিমিট শেষ হলে লোকাল Ollama-তে সুইচ করুন
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- settings modal -->
+<div class="overlay hidden" id="settingsOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="সেটিংস">
+    <div class="modal-h">
+      <b>সেটিংস</b>
+      <button class="iconbtn" id="btnCloseSettings" aria-label="বন্ধ">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-b">
+      <div class="field">
+        <label>কোথায় মডেল চলবে? (প্রোভাইডার)</label>
+        <div class="segs" id="segProvider">
+          <button data-prov="openrouter">OpenRouter (ফ্রি)</button>
+          <button data-prov="ollama">Ollama লোকাল</button>
+          <button data-prov="custom">কাস্টম URL</button>
+        </div>
+        <div class="hint" id="provHint"></div>
+      </div>
+
+      <div class="field" id="fKey">
+        <label id="lblKey">API key</label>
+        <div class="row">
+          <input class="inp" id="inKey" type="password" placeholder="sk-or-v1-…" spellcheck="false" autocomplete="off" />
+          <button class="btn ghost" id="btnEye" title="দেখান/লুকান">👁</button>
+        </div>
+        <div class="hint" id="keyHint"></div>
+      </div>
+
+      <div class="field hidden" id="fBase">
+        <label>বেস URL (OpenAI-সামঞ্জস্যপূর্ণ)</label>
+        <input class="inp" id="inBase" placeholder="http://localhost:11434/v1" spellcheck="false" autocomplete="off" />
+        <div class="hint">Ollama: <code>http://localhost:11434/v1</code> · LM Studio: <code>http://localhost:1234/v1</code> · vLLM/llama.cpp: নিজের পোর্ট</div>
+      </div>
+
+      <div class="field">
+        <label>মডেল</label>
+        <div class="row">
+          <select class="inp" id="selModel"><option value="">— আগে মডেল তালিকা আনুন —</option></select>
+          <button class="btn" id="btnRefreshModels" title="তালিকা আনুন">↻</button>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input class="inp" id="inModel" placeholder="অথবা হাতে লিখুন: qwen3:8b / google/gemini-2.0-flash-exp:free" spellcheck="false" autocomplete="off" />
+        </div>
+        <label class="switch" style="margin-top:9px">
+          <input type="checkbox" id="chkFreeOnly" /> শুধু ফ্রি মডেল দেখাও (<code>:free</code>)
+        </label>
+        <div class="status" id="modelStatus"></div>
+      </div>
+
+      <div class="field">
+        <label>সিস্টেম প্রম্পট (ঐচ্ছিক)</label>
+        <textarea class="inp" id="inSystem" rows="2" placeholder="যেমন: সংক্ষেপে বাংলায় উত্তর দাও।"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Temperature <span style="color:var(--muted2);font-weight:400">(সৃজনশীলতা)</span></label>
+        <div class="range">
+          <input type="range" id="inTemp" min="0" max="2" step="0.1" />
+          <output id="outTemp">0.7</output>
+        </div>
+      </div>
+
+      <div class="field" style="margin-bottom:4px">
+        <label>সর্বোচ্চ টোকেন</label>
+        <input class="inp" id="inMaxTokens" type="number" min="64" max="8192" step="64" />
+        <div class="hint">বেশি দিলে উত্তর লম্বা হবে, কিন্তু ফ্রি লিমিট দ্রুত শেষ হবে।</div>
+      </div>
+    </div>
+    <div class="modal-f">
+      <button class="btn ghost" id="btnTest">সংযোগ পরীক্ষা</button>
+      <button class="btn primary" id="btnSave">সংরক্ষণ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   হাইব্রিড চ্যাট — Ollama (লোকাল) + OpenRouter (ফ্রি), একই কোড
+   কোনো বিল্ড স্টেপ নেই, কোনো সার্ভার নেই, কোনো ট্র্যাকিং নেই।
+   ============================================================ */
+'use strict';
+
+const LS = { settings: 'hc.settings.v1', chats: 'hc.chats.v1', active: 'hc.active.v1' };
+
+const DEFAULT_SETTINGS = {
+  provider: 'openrouter',
+  keys: { openrouter: '', ollama: 'ollama', custom: '' },
+  bases: {
+    openrouter: 'https://openrouter.ai/api/v1',
+    ollama: 'http://localhost:11434/v1',
+    custom: 'http://localhost:1234/v1'
+  },
+  models: { openrouter: [], ollama: [], custom: [] },
+  model: '',
+  system: '',
+  temperature: 0.7,
+  maxTokens: 1200,
+  freeOnly: true
+};
+
+const PROVIDER_INFO = {
+  openrouter: {
+    label: 'OpenRouter',
+    kind: 'cloud',
+    hint: 'ফ্রি মডেল: নতুন অ্যাকাউন্টে ৫০ রিকোয়েস্ট/দিন, একবার $১০ ক্রেডিট কিনলে ১০০০/দিন (২০/মিনিট)। কার্ড ছাড়াই সাইনআপ করা যায়।',
+    keyHint: 'ফ্রি key নিন: <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> — key শুধু আপনার ব্রাউজারে সংরক্ষিত থাকে।'
+  },
+  ollama: {
+    label: 'Ollama',
+    kind: 'local',
+    hint: 'সম্পূর্ণ ফ্রি ও আনলিমিটেড, ইন্টারনেটও লাগে না। ⚠️ যে ডিভাইসে Ollama চলছে, ওই ডিভাইস থেকেই এই পেজ খুলতে হবে। ফোন থেকে লোকাল Ollama-তে যাওয়া যাবে না।',
+    keyHint: 'Ollama key চায় না — যেকোনো লেখা ঠিক আছে।'
+  },
+  custom: {
+    label: 'কাস্টম',
+    kind: 'local',
+    hint: 'যেকোনো OpenAI-সামঞ্জস্যপূর্ণ সার্ভার (LM Studio, llama.cpp, vLLM, Together, Groq…)।',
+    keyHint: 'ঐ সার্ভারের key দিন (না লাগলে খালি রাখুন)।'
+  }
+};
+
+/* ---------------- state ---------------- */
+let settings = loadSettings();
+let chats = loadChats();
+let activeId = localStorage.getItem(LS.active) || null;
+let abortCtrl = null;
+let busy = false;
+
+function loadSettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS.settings) || '{}');
+    return {
+      ...DEFAULT_SETTINGS, ...raw,
+      keys: { ...DEFAULT_SETTINGS.keys, ...(raw.keys || {}) },
+      bases: { ...DEFAULT_SETTINGS.bases, ...(raw.bases || {}) },
+      models: { ...DEFAULT_SETTINGS.models, ...(raw.models || {}) }
+    };
+  } catch { return structuredClone(DEFAULT_SETTINGS); }
+}
+function saveSettings() { localStorage.setItem(LS.settings, JSON.stringify(settings)); }
+
+function loadChats() {
+  try { const c = JSON.parse(localStorage.getItem(LS.chats) || '[]'); return Array.isArray(c) ? c : []; }
+  catch { return []; }
+}
+function saveChats() {
+  try { localStorage.setItem(LS.chats, JSON.stringify(chats)); }
+  catch (e) {
+    // quota — পুরোনো চ্যাট ফেলে দিয়ে আবার চেষ্টা
+    if (chats.length > 2) { chats = chats.slice(0, Math.ceil(chats.length / 2)); saveChats(); }
+  }
+}
+function currentChat() { return chats.find(c => c.id === activeId) || null; }
+
+/* ---------------- dom ---------------- */
+const $ = id => document.getElementById(id);
+const streamEl = $('stream'), streamIn = $('streamIn'), inputEl = $('input'),
+      sendBtn = $('btnSend'), chatListEl = $('chatList');
+
+/* ---------------- markdown ---------------- */
+function esc(s) {
+  return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function inline(s) {
+  return esc(s)
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?]|$)/g, '$1<em>$2</em>')
+    .replace(/~~([^~]+)~~/g, '<del>$1</del>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+function renderMarkdown(src = '') {
+  const blocks = [];
+  let text = String(src).replace(/```([a-zA-Z0-9+#.\-_]*)[ \t]*\r?\n?([\s\S]*?)(?:```|$)/g, (m, lang, code) => {
+    blocks.push({ lang: (lang || '').trim(), code: code.replace(/\s+$/, '') });
+    return '\n\u0000' + (blocks.length - 1) + '\u0000\n';
+  });
+  const lines = text.split(/\r?\n/);
+  let html = '', list = null, para = [];
+
+  const flushPara = () => { if (para.length) { html += '<p>' + inline(para.join(' ')) + '</p>'; para = []; } };
+  const closeList = () => { if (list) { html += '</' + list + '>'; list = null; } };
+
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li].replace(/\s+$/, '');
+    const cm = line.match(/^\u0000(\d+)\u0000$/);
+    if (cm) {
+      flushPara(); closeList();
+      const b = blocks[+cm[1]] || { lang: '', code: '' };
+      html += '<pre><div class="prehead"><span>' + esc(b.lang || 'code') +
+              '</span><button data-copy="' + (+cm[1]) + '">কপি</button></div><code>' +
+              esc(b.code) + '</code></pre>';
+      continue;
+    }
+    if (!line.trim()) { flushPara(); closeList(); continue; }
+
+    const h = line.match(/^(#{1,4})\s+(.*)$/);
+    if (h) { flushPara(); closeList(); const n = Math.min(h[1].length + 1, 5); html += '<h' + n + '>' + inline(h[2]) + '</h' + n + '>'; continue; }
+
+    if (/^\s*([-*_]\s*){3,}$/.test(line)) { flushPara(); closeList(); html += '<hr>'; continue; }
+
+    const ul = line.match(/^\s*[-*+]\s+(.*)$/);
+    if (ul) { flushPara(); if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; } html += '<li>' + inline(ul[1]) + '</li>'; continue; }
+
+    const ol = line.match(/^\s*\d+[.)]\s+(.*)$/);
+    if (ol) { flushPara(); if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; } html += '<li>' + inline(ol[1]) + '</li>'; continue; }
+
+    if (/^&gt;\s?|^>\s?/.test(line)) { flushPara(); closeList(); html += '<blockquote>' + inline(line.replace(/^&gt;\s?|^>\s?/, '')) + '</blockquote>'; continue; }
+
+    // টেবিল (সরল)
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      flushPara(); closeList();
+      const rows = [];
+      let j = li;
+      while (j < lines.length && /^\s*\|.*\|\s*$/.test(lines[j])) { rows.push(lines[j]); j++; }
+      const body = rows.filter(r => !/^\s*\|[\s:|-]+\|\s*$/.test(r));
+      if (body.length) {
+        const cells = r => r.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+        html += '<table>';
+        body.forEach((r, ri) => {
+          html += '<tr>' + cells(r).map(c => ri === 0
+            ? '<th>' + inline(c) + '</th>'
+            : '<td>' + inline(c) + '</td>').join('') + '</tr>';
+        });
+        html += '</table>';
+      }
+      li = j - 1;
+      continue;
+    }
+
+    para.push(line.trim());
+  }
+  flushPara(); closeList();
+  return html || '<p></p>';
+}
+
+/* ---------------- rendering ---------------- */
+function scrollBottom(force = false) {
+  const near = streamEl.scrollHeight - streamEl.scrollTop - streamEl.clientHeight < 140;
+  if (force || near) streamEl.scrollTop = streamEl.scrollHeight;
+}
+
+function msgHTML(m, idx) {
+  const isUser = m.role === 'user';
+  const content = m.error
+    ? '<div class="errbox">' + m.error + '</div>'
+    : renderMarkdown(m.content || '') + (m.streaming ? '<span class="cursor"></span>' : '');
+  const modelTag = (!isUser && m.model) ? '<span class="m">' + esc(m.model) + '</span>' : '';
+  const acts = (!isUser && !m.streaming && m.content && !m.error) ? `
+    <div class="msgacts">
+      <button data-act="copy" data-i="${idx}">কপি</button>
+      <button data-act="regen" data-i="${idx}">আবার</button>
+    </div>` : '';
+  return `<div class="msg ${isUser ? 'user' : 'assistant'}" data-i="${idx}">
+    <div class="av">${isUser ? 'আ' : 'AI'}</div>
+    <div class="body">
+      <div class="who">${isUser ? 'আপনি' : 'সহায়ক'} ${modelTag}</div>
+      <div class="content">${content}</div>
+      ${acts}
+    </div>
+  </div>`;
+}
+
+function welcomeHTML() {
+  const p = PROVIDER_INFO[settings.provider].label;
+  return `<div class="welcome">
+    <h1>ফ্রি <em>হাইব্রিড</em> চ্যাট</h1>
+    <p>একই অ্যাপ — লোকালি চালালে <b>Ollama</b> (আনলিমিটেড ফ্রি), হোস্ট করলে <b>OpenRouter</b>-এর ফ্রি মডেল। আপনার চ্যাট শুধু এই ব্রাউজারেই থাকে।</p>
+    <div class="cards">
+      <div class="card" data-quick="openrouter">
+        <span class="tag">শুরু করুন</span>
+        <b>ফ্রি key দিয়ে শুরু</b>
+        <span>OpenRouter-এ সাইনআপ করে ফ্রি key নিন, সেটিংসে বসান। কার্ড লাগে না।</span>
+      </div>
+      <div class="card" data-quick="ollama">
+        <span class="tag">আনলিমিটেড</span>
+        <b>Ollama লোকাল দিয়ে</b>
+        <span>কম্পিউটারে <code>ollama pull qwen3:8b</code> চালান — টোকেনের কোনো খরচ নেই।</span>
+      </div>
+      <div class="card" data-quick="test">
+        <span class="tag">১ মিনিট</span>
+        <b>সংযোগ পরীক্ষা</b>
+        <span>কোন প্রোভাইডার কাজ করছে দেখে নিন — সমস্যা হলে বাংলায় সমাধান দেখাবে।</span>
+      </div>
+    </div>
+    <p style="font-size:12px;color:var(--muted2)">বর্তমান প্রোভাইডার: <b>${esc(p)}</b> · মডেল: <b>${esc(settings.model || 'বাছা হয়নি')}</b></p>
+  </div>`;
+}
+
+function render() {
+  const chat = currentChat();
+  if (!chat || chat.messages.length === 0) {
+    streamIn.innerHTML = welcomeHTML();
+  } else {
+    streamIn.innerHTML = chat.messages.map(msgHTML).join('');
+  }
+  renderChatList();
+  renderHeader();
+  scrollBottom(true);
+}
+
+function renderHeader() {
+  const chat = currentChat();
+  $('hTitle').textContent = chat ? chat.title : 'নতুন চ্যাট';
+  $('hSub').textContent = settings.model
+    ? PROVIDER_INFO[settings.provider].label + ' · চ্যাট এই ব্রাউজারেই সংরক্ষিত'
+    : 'মডেল বাছা হয়নি — সেটিংসে যান';
+  $('modelChipText').textContent = settings.model || 'মডেল নেই';
+  $('modelChip').title = settings.model || '';
+
+  const info = PROVIDER_INFO[settings.provider];
+  const configured = settings.provider === 'openrouter' ? !!settings.keys.openrouter : true;
+  const dot = $('connDot'), txt = $('connText');
+  dot.className = 'dot ' + (configured ? (info.kind === 'local' ? 'local' : 'ok') : '');
+  txt.textContent = configured
+    ? info.label + ' · ' + (settings.model || 'মডেল নেই')
+    : 'OpenRouter key দিন';
+}
+
+function renderChatList() {
+  if (!chats.length) {
+    chatListEl.innerHTML = '<div class="chatlist-h">চ্যাট</div><div style="padding:10px;color:var(--muted2);font-size:12.5px">এখনো কোনো চ্যাট নেই।</div>';
+    return;
+  }
+  const sorted = [...chats].sort((a, b) => b.updated - a.updated);
+  chatListEl.innerHTML = '<div class="chatlist-h">চ্যাট</div>' + sorted.map(c => `
+    <div class="chatitem ${c.id === activeId ? 'active' : ''}" data-id="${c.id}">
+      <span class="t">${esc(c.title || 'চ্যাট')}</span>
+      <button class="del" data-del="${c.id}" title="মুছুন">✕</button>
+    </div>`).join('');
+}
+
+/* ---------------- chat ops ---------------- */
+function newChatId() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+function startNewChat() {
+  activeId = null;
+  localStorage.removeItem(LS.active);
+  inputEl.value = '';
+  autosize();
+  render();
+  inputEl.focus();
+  closeSidebar();
+}
+
+function ensureChat() {
+  let chat = currentChat();
+  if (!chat) {
+    chat = { id: newChatId(), title: 'নতুন চ্যাট', messages: [], created: Date.now(), updated: Date.now() };
+    chats.push(chat);
+    activeId = chat.id;
+    localStorage.setItem(LS.active, activeId);
+    saveChats();
+  }
+  return chat;
+}
+
+function deleteChat(id) {
+  chats = chats.filter(c => c.id !== id);
+  if (activeId === id) { activeId = chats[0]?.id || null; if (activeId) localStorage.setItem(LS.active, activeId); else localStorage.removeItem(LS.active); }
+  saveChats(); render();
+}
+
+/* ---------------- provider plumbing ---------------- */
+function endpoint() {
+  const base = (settings.bases[settings.provider] || '').replace(/\/+$/, '');
+  const key = settings.keys[settings.provider] || '';
+  const headers = { 'Content-Type': 'application/json' };
+  if (settings.provider === 'openrouter') {
+    headers['Authorization'] = 'Bearer ' + key;
+    headers['HTTP-Referer'] = location.origin;
+    headers['X-Title'] = 'Hybrid Chat';
+  } else if (key) {
+    headers['Authorization'] = 'Bearer ' + key;
+  }
+  return { url: base + '/chat/completions', headers, base };
+}
+
+function modelsUrl() {
+  const base = (settings.bases[settings.provider] || '').replace(/\/+$/, '');
+  if (settings.provider === 'ollama') {
+    // Ollama: /api/tags বেশি নির্ভরযোগ্য (CORS + মডেল নাম)
+    const origin = base.replace(/\/v1$/, '');
+    return { primary: origin + '/api/tags', fallback: base + '/models', type: 'ollama' };
+  }
+  return { primary: base + '/models', type: 'openai' };
+}
+
+async function fetchModels() {
+  const st = $('modelStatus');
+  st.className = 'status busy'; st.textContent = 'মডেল তালিকা আনছি…';
+  const { primary, fallback, type } = modelsUrl();
+  const headers = {};
+  const key = settings.keys[settings.provider] || '';
+  if (settings.provider === 'openrouter' && key) headers['Authorization'] = 'Bearer ' + key;
+
+  const tryFetch = async (url) => {
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  };
+
+  try {
+    let data;
+    try { data = await tryFetch(primary); }
+    catch (e) { if (fallback) data = await tryFetch(fallback); else throw e; }
+
+    let list = [];
+    if (type === 'ollama' && data.models) list = data.models.map(m => m.name || m.model).filter(Boolean);
+    else if (Array.isArray(data.data)) list = data.data.map(m => m.id).filter(Boolean);
+    else if (Array.isArray(data.models)) list = data.models.map(m => m.id || m.name).filter(Boolean);
+
+    if (settings.provider === 'openrouter' && settings.freeOnly) list = list.filter(id => id.endsWith(':free'));
+    list.sort();
+
+    settings.models[settings.provider] = list;
+    saveSettings();
+    fillModelSelect();
+    st.className = 'status ok';
+    st.textContent = '✔ ' + list.length + 'টি মডেল পাওয়া গেছে' + (settings.provider === 'openrouter' && settings.freeOnly ? ' (শুধু ফ্রি)' : '');
+    if (!settings.model && list.length) {
+      $('inModel').value = list[0];
+    }
+  } catch (e) {
+    st.className = 'status err';
+    st.innerHTML = '✕ তালিকা আনা যায়নি (' + esc(String(e.message || e)) + ')' + hintForError(e, 'models');
+  }
+}
+
+function fillModelSelect() {
+  const sel = $('selModel');
+  const list = settings.models[settings.provider] || [];
+  sel.innerHTML = '<option value="">— ' + (list.length ? 'বেছে নিন (' + list.length + ')' : 'তালিকা খালি, ↻ চাপুন') + ' —</option>' +
+    list.map(id => `<option value="${esc(id)}">${esc(id)}</option>`).join('');
+  if (settings.model && list.includes(settings.model)) sel.value = settings.model;
+}
+
+/* ---------------- errors ---------------- */
+function hintForError(err, ctx) {
+  const msg = String((err && (err.message || err)) || '');
+  const local = settings.provider !== 'openrouter';
+  if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) {
+    return local
+      ? `<br><br><b>কেন?</b> ব্রাউজার লোকাল সার্ভারে পৌঁছাতে পারছে না বা CORS ব্লক করছে।<br>
+         ১. টার্মিনালে চেক করুন: <code>curl ${esc(settings.bases[settings.provider])}/models</code><br>
+         ২. CORS খুলুন: <code>OLLAMA_ORIGINS="*" ollama serve</code> (Windows: <code>setx OLLAMA_ORIGINS "*"</code> তারপর Ollama রিস্টার্ট)<br>
+         ৩. পেজটি <code>https://…</code> থেকে খোলা থাকলে ব্রাউজার <code>http://localhost</code> আটকে দিতে পারে — লোকালি <code>http://localhost</code> দিয়ে খুলুন।<br>
+         ৪. ফোন থেকে হলে: ফোনের ব্রাউজার আপনার কম্পিউটারের Ollama দেখতে পাবে না — OpenRouter ফ্রি key ব্যবহার করুন।`
+      : `<br><br><b>কেন?</b> ইন্টারনেট/ফায়ারওয়াল/অ্যাড-ব্লকার ব্লক করছে, অথবা key ভুল।`;
+  }
+  if (/401|403/.test(msg)) return '<br><br>API key ভুল বা মেয়াদোত্তীর্ণ। <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">নতুন key নিন</a>।';
+  if (/402/.test(msg)) return '<br><br>এই মডেলের জন্য ক্রেডিট নেই। <b>শুধু ফ্রি মডেল</b> (নামের শেষে <code>:free</code>) বেছে নিন।';
+  if (/429/.test(msg)) return '<br><br>ফ্রি লিমিট শেষ (নতুন অ্যাকাউন্টে ৫০ রিকোয়েস্ট/দিন, ২০/মিনিট)। ০০:০০ UTC-তে রিসেট হয় — অথবা লোকাল Ollama-তে সুইচ করুন।';
+  if (/404/.test(msg)) return '<br><br>মডেলের নাম বা URL ভুল। সেটিংসে ↻ চেপে তালিকা আনুন।';
+  if (/CORS/i.test(msg)) return '<br><br>সার্ভারে CORS বন্ধ। <code>OLLAMA_ORIGINS</code> সেট করুন।';
+  return '';
+}
+
+/* ---------------- sending ---------------- */
+function autosize() {
+  inputEl.style.height = 'auto';
+  inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + 'px';
+}
+
+async function send(text, opts = {}) {
+  if (busy) return;
+  const content = (text !== undefined ? text : inputEl.value).trim();
+  if (!content) return;
+
+  if (settings.provider === 'openrouter' && !settings.keys.openrouter) {
+    openSettings();
+    const st = $('modelStatus');
+    st.className = 'status err';
+    st.innerHTML = 'আগে OpenRouter-এর ফ্রি API key দিন (উপরে লিংক আছে)।';
+    return;
+  }
+  if (!settings.model) {
+    openSettings();
+    const st = $('modelStatus');
+    st.className = 'status err';
+    st.innerHTML = 'মডেল বাছা হয়নি — ↻ চেপে তালিকা আনুন বা হাতে নাম লিখুন।';
+    return;
+  }
+
+  const chat = ensureChat();
+  if (!opts.isRegen) {
+    chat.messages.push({ role: 'user', content });
+    inputEl.value = ''; autosize();
+    if (chat.messages.length === 1) {
+      chat.title = content.slice(0, 42) + (content.length > 42 ? '…' : '');
+    }
+  }
+
+  const assistant = { role: 'assistant', content: '', model: settings.model, streaming: true };
+  chat.messages.push(assistant);
+  chat.updated = Date.now();
+  saveChats();
+  render();
+
+  busy = true;
+  setSendState(true);
+  abortCtrl = new AbortController();
+
+  const { url, headers } = endpoint();
+  const hist = chat.messages
+    .filter(m => !m.streaming && !m.error && (m.role === 'user' || m.role === 'assistant'))
+    .filter(m => m !== assistant)
+    .map(m => ({ role: m.role, content: m.content }));
+  const messages = settings.system ? [{ role: 'system', content: settings.system }, ...hist] : hist;
+
+  const body = {
+    model: settings.model,
+    messages,
+    stream: true,
+    temperature: Number(settings.temperature) || 0.7
+  };
+  if (Number(settings.maxTokens) > 0) body.max_tokens = Number(settings.maxTokens);
+
+  let rafPending = false;
+  const paint = () => {
+    if (rafPending) return;
+    rafPending = true;
+    requestAnimationFrame(() => {
+      rafPending = false;
+      const el = streamIn.querySelector('.msg[data-i="' + (chat.messages.length - 1) + '"] .content');
+      if (el) { el.innerHTML = renderMarkdown(assistant.content) + '<span class="cursor"></span>'; scrollBottom(); }
+    });
+  };
+
+  try {
+    const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(body), signal: abortCtrl.signal });
+
+    if (!res.ok) {
+      let detail = '';
+      try { const j = await res.json(); detail = j?.error?.message || j?.message || JSON.stringify(j).slice(0, 300); }
+      catch { try { detail = (await res.text()).slice(0, 300); } catch {} }
+      throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail : ''));
+    }
+
+    if (!res.body) {
+      const txt = await res.text();
+      assistant.content = extractFromText(txt) || txt;
+      throw '';
+    }
+
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    let sawAny = false;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let nl;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line || line.startsWith(':')) continue;
+        if (!line.startsWith('data:')) continue;
+        const payload = line.slice(5).trim();
+        if (payload === '[DONE]') { buf = ''; break; }
+        try {
+          const j = JSON.parse(payload);
+          if (j.error) throw new Error(j.error.message || 'stream error');
+          const d = j.choices?.[0]?.delta || {};
+          const piece = d.content ?? d.reasoning_content ?? '';
+          if (piece) { assistant.content += piece; sawAny = true; paint(); }
+        } catch (e) {
+          if (e instanceof SyntaxError) continue;
+          throw e;
+        }
+      }
+    }
+
+    if (!sawAny && !assistant.content.trim()) {
+      assistant.content = '_(খালি উত্তর এসেছে — অন্য মডেল বেছে নিন বা আবার চেষ্টা করুন)_';
+    }
+  } catch (e) {
+    if (e && e.name === 'AbortError') {
+      if (!assistant.content) assistant.content = '_(থামানো হয়েছে)_';
+    } else if (e === '') {
+      // non-stream success path
+    } else {
+      const msg = String(e.message || e);
+      // স্ট্রিম মাঝপথে ভাঙলে যা পাওয়া গেছে তা রাখি, নাহলে এরর দেখাই
+      if (!assistant.content) {
+        assistant.error = '<b>উত্তর আসেনি।</b> ' + esc(msg) + hintForError(e);
+        delete assistant.streaming;
+      }
+    }
+  } finally {
+    delete assistant.streaming;
+    if (!assistant.content) delete assistant.content;
+    assistant.model = settings.model;
+    chat.updated = Date.now();
+    saveChats();
+    busy = false;
+    abortCtrl = null;
+    setSendState(false);
+    render();
+    scrollBottom(true);
+  }
+}
+
+function extractFromText(txt) {
+  try {
+    const j = JSON.parse(txt);
+    return j?.choices?.[0]?.message?.content || j?.message?.content || '';
+  } catch { return ''; }
+}
+
+function setSendState(isBusy) {
+  sendBtn.classList.toggle('stop', isBusy);
+  sendBtn.disabled = false;
+  sendBtn.innerHTML = isBusy
+    ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>'
+    : '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  sendBtn.title = isBusy ? 'থামান' : 'পাঠান';
+}
+
+/* ---------------- settings modal ---------------- */
+function openSettings() {
+  $('settingsOverlay').classList.remove('hidden');
+  syncSegs();
+  $('inKey').value = settings.keys[settings.provider] || '';
+  $('inBase').value = settings.bases[settings.provider] || '';
+  $('inModel').value = settings.model || '';
+  $('inSystem').value = settings.system || '';
+  $('inTemp').value = settings.temperature;
+  $('outTemp').textContent = settings.temperature;
+  $('inMaxTokens').value = settings.maxTokens;
+  $('chkFreeOnly').checked = settings.freeOnly;
+  updateProviderUI();
+  fillModelSelect();
+  $('modelStatus').textContent = '';
+  $('modelStatus').className = 'status';
+}
+function closeSettings() { $('settingsOverlay').classList.add('hidden'); }
+
+function syncSegs() {
+  document.querySelectorAll('#segProvider button').forEach(b => b.classList.toggle('on', b.dataset.prov === settings.provider));
+}
+
+function updateProviderUI() {
+  const info = PROVIDER_INFO[settings.provider];
+  $('provHint').innerHTML = info.hint;
+  $('keyHint').innerHTML = info.keyHint;
+  $('lblKey').textContent = settings.provider === 'openrouter' ? 'OpenRouter API key' : 'API key (ঐচ্ছিক)';
+  $('fKey').classList.toggle('hidden', false);
+  $('fBase').classList.toggle('hidden', settings.provider === 'openrouter');
+  $('chkFreeOnly').parentElement.style.display = settings.provider === 'openrouter' ? 'flex' : 'none';
+  $('inKey').placeholder = settings.provider === 'openrouter' ? 'sk-or-v1-…' : 'ollama';
+  $('inBase').value = settings.bases[settings.provider] || '';
+  fillModelSelect();
+}
+
+function saveFromModal() {
+  const p = settings.provider;
+  settings.keys[p] = $('inKey').value.trim() || (p === 'ollama' ? 'ollama' : '');
+  if ($('inBase').value.trim()) settings.bases[p] = $('inBase').value.trim().replace(/\/+$/, '');
+  const manual = $('inModel').value.trim();
+  const chosen = $('selModel').value;
+  settings.model = manual || chosen || settings.model || '';
+  settings.system = $('inSystem').value;
+  settings.temperature = Number($('inTemp').value);
+  settings.maxTokens = Math.max(64, Number($('inMaxTokens').value) || 1200);
+  settings.freeOnly = $('chkFreeOnly').checked;
+  saveSettings();
+  closeSettings();
+  render();
+  if (!settings.model) {
+    const st = document.querySelector('#streamIn');
+    if (st) st.insertAdjacentHTML('afterbegin', '');
+  }
+}
+
+async function testConnection() {
+  const p = settings.provider;
+  const base = ($('inBase').value.trim() || settings.bases[p]).replace(/\/+$/, '');
+  const key = $('inKey').value.trim();
+  const st = $('modelStatus');
+  st.className = 'status busy';
+  st.textContent = 'পরীক্ষা চলছে… (' + base + ')';
+
+  const headers = {};
+  if (p === 'openrouter') { if (!key) { st.className = 'status err'; st.textContent = '✕ আগে API key দিন।'; return; } headers['Authorization'] = 'Bearer ' + key; }
+  else if (key) headers['Authorization'] = 'Bearer ' + key;
+
+  const urls = p === 'ollama'
+    ? [base.replace(/\/v1$/, '') + '/api/tags', base + '/models']
+    : [base + '/models'];
+
+  let lastErr = null;
+  for (const u of urls) {
+    try {
+      const t0 = performance.now();
+      const res = await fetch(u, { headers });
+      const ms = Math.round(performance.now() - t0);
+      if (!res.ok) { lastErr = new Error('HTTP ' + res.status); continue; }
+      const data = await res.json();
+      let n = 0;
+      if (data.models) n = data.models.length; else if (Array.isArray(data.data)) n = data.data.length;
+      st.className = 'status ok';
+      st.innerHTML = '✔ সংযোগ ঠিক আছে · ' + n + 'টি মডেল · ' + ms + 'ms<br><span style="color:var(--muted2)">' + esc(u) + '</span>';
+      return;
+    } catch (e) { lastErr = e; }
+  }
+  st.className = 'status err';
+  st.innerHTML = '✕ ব্যর্থ: ' + esc(String(lastErr?.message || lastErr || 'unknown')) + hintForError(lastErr, 'test');
+}
+
+/* ---------------- sidebar / mobile ---------------- */
+function openSidebar() {
+  $('sidebar').classList.add('open');
+  if (!$('scrim')) {
+    const s = document.createElement('div');
+    s.className = 'scrim'; s.id = 'scrim';
+    s.onclick = closeSidebar;
+    document.body.appendChild(s);
+  }
+}
+function closeSidebar() {
+  $('sidebar').classList.remove('open');
+  $('scrim')?.remove();
+}
+
+/* ---------------- events ---------------- */
+$('btnNew').addEventListener('click', startNewChat);
+$('btnSettings').addEventListener('click', openSettings);
+$('btnSettings2').addEventListener('click', openSettings);
+$('btnCloseSettings').addEventListener('click', closeSettings);
+$('settingsOverlay').addEventListener('click', e => { if (e.target.id === 'settingsOverlay') closeSettings(); });
+$('btnSave').addEventListener('click', saveFromModal);
+$('btnTest').addEventListener('click', testConnection);
+$('btnRefreshModels').addEventListener('click', fetchModels);
+$('btnEye').addEventListener('click', () => {
+  const i = $('inKey');
+  i.type = i.type === 'password' ? 'text' : 'password';
+});
+
+$('segProvider').addEventListener('click', e => {
+  const b = e.target.closest('button[data-prov]');
+  if (!b) return;
+  settings.provider = b.dataset.prov;
+  settings.model = '';
+  saveSettings();
+  syncSegs();
+  updateProviderUI();
+  renderHeader();
+});
+
+$('inTemp').addEventListener('input', e => { $('outTemp').textContent = e.target.value; });
+$('selModel').addEventListener('change', e => { if (e.target.value) $('inModel').value = e.target.value; });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeSettings(); closeSidebar(); }
+  // Ctrl/Cmd + K → নতুন চ্যাট
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); startNewChat(); }
+});
+
+inputEl.addEventListener('input', autosize);
+inputEl.addEventListener('keydown', e => {
+  const coarse = matchMedia('(pointer: coarse)').matches;
+  if (e.key === 'Enter' && !e.shiftKey && !coarse) {
+    e.preventDefault();
+    if (busy) return;
+    send();
+  }
+});
+
+sendBtn.addEventListener('click', () => {
+  if (busy) { abortCtrl?.abort(); return; }
+  send();
+});
+
+chatListEl.addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if (del) { e.stopPropagation(); deleteChat(del.dataset.del); return; }
+  const item = e.target.closest('.chatitem');
+  if (item) {
+    activeId = item.dataset.id;
+    localStorage.setItem(LS.active, activeId);
+    render();
+    closeSidebar();
+  }
+});
+
+streamIn.addEventListener('click', async e => {
+  const copyBtn = e.target.closest('[data-copy]');
+  if (copyBtn) {
+    const pre = copyBtn.closest('pre');
+    const code = pre?.querySelector('code')?.textContent || '';
+    await copyText(code);
+    copyBtn.textContent = 'কপি হয়েছে ✓';
+    setTimeout(() => (copyBtn.textContent = 'কপি'), 1300);
+    return;
+  }
+
+  const quick = e.target.closest('[data-quick]');
+  if (quick) {
+    const k = quick.dataset.quick;
+    if (k === 'test') { openSettings(); testConnection(); return; }
+    settings.provider = k;
+    settings.model = '';
+    saveSettings(); openSettings();
+    if (k === 'openrouter') fetchModels();
+    return;
+  }
+
+  const act = e.target.closest('[data-act]');
+  if (act) {
+    const i = Number(act.dataset.i);
+    const chat = currentChat();
+    if (!chat) return;
+    const m = chat.messages[i];
+    if (!m) return;
+    if (act.dataset.act === 'copy') {
+      await copyText(m.content || '');
+      const old = act.textContent; act.textContent = 'কপি ✓';
+      setTimeout(() => (act.textContent = old), 1200);
+    }
+    if (act.dataset.act === 'regen') {
+      if (busy) return;
+      // শেষ assistant উত্তর বাদ দিয়ে আবার চাই
+      let last = -1;
+      for (let k = chat.messages.length - 1; k >= 0; k--) if (chat.messages[k].role === 'assistant') { last = k; break; }
+      if (last >= 0) chat.messages.splice(last, 1);
+      saveChats();
+      render();
+      const lastUser = [...chat.messages].reverse().find(x => x.role === 'user');
+      if (lastUser) send(lastUser.content, { isRegen: true });
+    }
+  }
+});
+
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+}
+
+// window resize → mobile menu visibility
+function syncMobile() {
+  const mobile = innerWidth <= 760;
+  $('btnMenu').classList.toggle('hidden', !mobile);
+  if (!mobile) closeSidebar();
+}
+$('btnMenu').addEventListener('click', openSidebar);
+addEventListener('resize', syncMobile);
+
+/* ---------------- boot ---------------- */
+(function boot() {
+  syncMobile();
+  if (activeId && !currentChat()) activeId = chats[0]?.id || null;
+  if (!activeId && chats.length) activeId = [...chats].sort((a, b) => b.updated - a.updated)[0].id;
+  if (activeId) localStorage.setItem(LS.active, activeId);
+  render();
+  if (settings.models[settings.provider]?.length) fillModelSelect();
+  autosize();
+  if (!settings.model && settings.provider === 'openrouter' && settings.keys.openrouter) {
+    fetchModels().catch(() => {});
+  }
+  // সার্ভিস ওয়ার্কার না থাকলেও অ্যাপ offline-installable রাখতে চাইলে যোগ করা যাবে
+})();
+</script>
+</body>
+</html>
