@@ -204,8 +204,18 @@
   select.inp{appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%238b97ad' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 11px center; padding-right:30px}
   .segs{display:flex; gap:6px; background:var(--panel2); padding:4px; border-radius:11px; border:1px solid var(--line)}
   .segs button{
-    flex:1; padding:7px 6px; border-radius:8px; font-size:12.5px; color:var(--muted); font-weight:600; transition:.12s;
+    flex:1 1 0; min-width:0; padding:7px 5px; border-radius:8px; font-size:11.8px; color:var(--muted); font-weight:600; transition:.12s;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .notice{
+    max-width:var(--maxw); margin:10px auto 0; padding:10px 12px; border-radius:11px; font-size:12.5px;
+    background:#ffb45414; border:1px solid #ffb45444; color:#ffd9a3; line-height:1.6;
+  }
+  .notice b{color:#ffe4b8}
+  .notice a,.notice button.link{color:#ffd9a3; text-decoration:underline; font-size:12.5px}
+  .lockbadge{
+    display:inline-flex; align-items:center; gap:4px; font-size:10.5px; padding:2px 7px; border-radius:999px;
+    background:#37d67a1a; border:1px solid #37d67a44; color:#8ff0b5;
   }
   .segs button.on{background:var(--panel3); color:var(--text); box-shadow:0 1px 3px #00000055}
   .row{display:flex; gap:8px}
@@ -324,9 +334,10 @@
       <div class="field">
         <label>কোথায় মডেল চলবে? (প্রোভাইডার)</label>
         <div class="segs" id="segProvider">
-          <button data-prov="openrouter">OpenRouter (ফ্রি)</button>
-          <button data-prov="ollama">Ollama লোকাল</button>
-          <button data-prov="custom">কাস্টম URL</button>
+          <button data-prov="server">সার্ভার</button>
+          <button data-prov="openrouter">OpenRouter</button>
+          <button data-prov="ollama">Ollama</button>
+          <button data-prov="custom">কাস্টম</button>
         </div>
         <div class="hint" id="provHint"></div>
       </div>
@@ -397,14 +408,15 @@
 const LS = { settings: 'hc.settings.v1', chats: 'hc.chats.v1', active: 'hc.active.v1' };
 
 const DEFAULT_SETTINGS = {
-  provider: 'openrouter',
-  keys: { openrouter: '', ollama: 'ollama', custom: '' },
+  provider: 'server',
+  keys: { server: '', openrouter: '', ollama: 'ollama', custom: '' },
   bases: {
+    server: 'api',
     openrouter: 'https://openrouter.ai/api/v1',
     ollama: 'http://localhost:11434/v1',
     custom: 'http://localhost:1234/v1'
   },
-  models: { openrouter: [], ollama: [], custom: [] },
+  models: { server: [], openrouter: [], ollama: [], custom: [] },
   model: '',
   system: '',
   temperature: 0.7,
@@ -413,6 +425,12 @@ const DEFAULT_SETTINGS = {
 };
 
 const PROVIDER_INFO = {
+  server: {
+    label: 'সাইট সার্ভার',
+    kind: 'cloud',
+    hint: 'এই সাইটের নিজের সার্ভার API key ধরে রাখে (Vercel env var) — আপনাকে কিছু বসাতে হবে না, ফোনেও সোজা চলবে। key ব্রাউজারে কখনো আসে না।',
+    keyHint: 'কিছু লাগবে না — key সার্ভারে আছে।'
+  },
   openrouter: {
     label: 'OpenRouter',
     kind: 'cloud',
@@ -439,6 +457,8 @@ let chats = loadChats();
 let activeId = localStorage.getItem(LS.active) || null;
 let abortCtrl = null;
 let busy = false;
+let serverDown = false;   // সার্ভার-মোড পাওয়া যাচ্ছে না
+let checkMsg = null;      // { ok:boolean, text:string }
 
 function loadSettings() {
   try {
@@ -577,26 +597,43 @@ function msgHTML(m, idx) {
 
 function welcomeHTML() {
   const p = PROVIDER_INFO[settings.provider].label;
-  return `<div class="welcome">
-    <h1>ফ্রি <em>হাইব্রিড</em> চ্যাট</h1>
-    <p>একই অ্যাপ — লোকালি চালালে <b>Ollama</b> (আনলিমিটেড ফ্রি), হোস্ট করলে <b>OpenRouter</b>-এর ফ্রি মডেল। আপনার চ্যাট শুধু এই ব্রাউজারেই থাকে।</p>
-    <div class="cards">
-      <div class="card" data-quick="openrouter">
+  const serverMode = settings.provider === 'server';
+  const first = serverMode
+    ? `<div class="card" data-quick="test">
+        <span class="tag">প্রস্তুত</span>
+        <b>কোনো key ছাড়াই শুরু</b>
+        <span>API key সার্ভারে আছে — নিচে প্রশ্ন লিখলেই উত্তর আসবে। ফোনেও একইভাবে চলবে।</span>
+      </div>`
+    : `<div class="card" data-quick="openrouter">
         <span class="tag">শুরু করুন</span>
         <b>ফ্রি key দিয়ে শুরু</b>
         <span>OpenRouter-এ সাইনআপ করে ফ্রি key নিন, সেটিংসে বসান। কার্ড লাগে না।</span>
-      </div>
+      </div>`;
+  const notices = [
+    serverDown ? `<div class="notice"><b>সার্ভার-মোড পাওয়া যাচ্ছে না।</b> এই হোস্টিংয়ে <code>api/</code> ফাংশন নেই বা <code>OPENROUTER_API_KEY</code> সেট করা নেই।
+      সেটিংসে <b>OpenRouter</b> বেছে নিজের ফ্রি key দিন, অথবা লোকাল <b>Ollama</b> ব্যবহার করুন।</div>` : '',
+    checkMsg ? `<div class="notice" style="${checkMsg.ok ? 'border-color:#37d67a55;background:#37d67a12;color:#9ff0bc' : ''}">${checkMsg.text}</div>` : ''
+  ].join('');
+  return `<div class="welcome">
+    ${notices}
+    <h1>ফ্রি <em>হাইব্রিড</em> চ্যাট</h1>
+    <p>${serverMode
+      ? 'সার্ভারে key লুকানো — সোজা লিখে ফেলুন। চ্যাট শুধু এই ব্রাউজারেই থাকে।'
+      : 'একই অ্যাপ — লোকালি চালালে <b>Ollama</b> (আনলিমিটেড ফ্রি), হোস্ট করলে <b>OpenRouter</b>-এর ফ্রি মডেল। আপনার চ্যাট শুধু এই ব্রাউজারেই থাকে।'}</p>
+    <div class="cards">
+      ${first}
       <div class="card" data-quick="ollama">
         <span class="tag">আনলিমিটেড</span>
         <b>Ollama লোকাল দিয়ে</b>
         <span>কম্পিউটারে <code>ollama pull qwen3:8b</code> চালান — টোকেনের কোনো খরচ নেই।</span>
       </div>
-      <div class="card" data-quick="test">
+      <div class="card" data-quick="${serverMode ? 'connection' : 'test'}">
         <span class="tag">১ মিনিট</span>
         <b>সংযোগ পরীক্ষা</b>
         <span>কোন প্রোভাইডার কাজ করছে দেখে নিন — সমস্যা হলে বাংলায় সমাধান দেখাবে।</span>
       </div>
     </div>
+    ${serverMode ? '<p style="font-size:12px;color:var(--muted2)"><span class="lockbadge">🔒 key সার্ভারে</span> API key কখনো ব্রাউজারে পাঠানো হয় না</p>' : ''}
     <p style="font-size:12px;color:var(--muted2)">বর্তমান প্রোভাইডার: <b>${esc(p)}</b> · মডেল: <b>${esc(settings.model || 'বাছা হয়নি')}</b></p>
   </div>`;
 }
@@ -626,9 +663,11 @@ function renderHeader() {
   const configured = settings.provider === 'openrouter' ? !!settings.keys.openrouter : true;
   const dot = $('connDot'), txt = $('connText');
   dot.className = 'dot ' + (configured ? (info.kind === 'local' ? 'local' : 'ok') : '');
-  txt.textContent = configured
-    ? info.label + ' · ' + (settings.model || 'মডেল নেই')
-    : 'OpenRouter key দিন';
+  txt.textContent = !configured
+    ? 'OpenRouter key দিন'
+    : settings.provider === 'server'
+      ? 'সার্ভার · key লুকানো · ' + (settings.model || 'মডেল নেই')
+      : info.label + ' · ' + (settings.model || 'মডেল নেই');
 }
 
 function renderChatList() {
@@ -680,6 +719,11 @@ function endpoint() {
   const base = (settings.bases[settings.provider] || '').replace(/\/+$/, '');
   const key = settings.keys[settings.provider] || '';
   const headers = { 'Content-Type': 'application/json' };
+
+  // সার্ভার-মোড: key সার্ভারে, ব্রাউজার শুধু প্রক্সিতে রিকোয়েস্ট পাঠায়
+  if (settings.provider === 'server') {
+    return { url: (base || 'api') + '/chat', headers, base: base || 'api' };
+  }
   if (settings.provider === 'openrouter') {
     headers['Authorization'] = 'Bearer ' + key;
     headers['HTTP-Referer'] = location.origin;
@@ -692,6 +736,7 @@ function endpoint() {
 
 function modelsUrl() {
   const base = (settings.bases[settings.provider] || '').replace(/\/+$/, '');
+  if (settings.provider === 'server') return { primary: (base || 'api') + '/models', type: 'openai' };
   if (settings.provider === 'ollama') {
     // Ollama: /api/tags বেশি নির্ভরযোগ্য (CORS + মডেল নাম)
     const origin = base.replace(/\/v1$/, '');
@@ -724,14 +769,19 @@ async function fetchModels() {
     else if (Array.isArray(data.data)) list = data.data.map(m => m.id).filter(Boolean);
     else if (Array.isArray(data.models)) list = data.models.map(m => m.id || m.name).filter(Boolean);
 
-    if (settings.provider === 'openrouter' && settings.freeOnly) list = list.filter(id => id.endsWith(':free'));
+    const cloudish = settings.provider === 'openrouter' || settings.provider === 'server';
+    if (cloudish && settings.freeOnly) list = list.filter(id => id.endsWith(':free'));
     list.sort();
 
     settings.models[settings.provider] = list;
+    if (settings.provider === 'server' && !settings.model && list.length) {
+      settings.model = list[0];
+      renderHeader();
+    }
     saveSettings();
     fillModelSelect();
     st.className = 'status ok';
-    st.textContent = '✔ ' + list.length + 'টি মডেল পাওয়া গেছে' + (settings.provider === 'openrouter' && settings.freeOnly ? ' (শুধু ফ্রি)' : '');
+    st.textContent = '✔ ' + list.length + 'টি মডেল পাওয়া গেছে' + (cloudish && settings.freeOnly ? ' (শুধু ফ্রি)' : '');
     if (!settings.model && list.length) {
       $('inModel').value = list[0];
     }
@@ -752,7 +802,12 @@ function fillModelSelect() {
 /* ---------------- errors ---------------- */
 function hintForError(err, ctx) {
   const msg = String((err && (err.message || err)) || '');
-  const local = settings.provider !== 'openrouter';
+  const local = settings.provider === 'ollama' || settings.provider === 'custom';
+  if (settings.provider === 'server' && /Failed to fetch|NetworkError|Load failed|parse|404/i.test(msg)) {
+    return `<br><br><b>কেন?</b> এই হোস্টিংয়ে <code>api/</code> ফাংশন নেই, অথবা সার্ভারে key সেট করা নেই।<br>
+     · GitHub Pages / সাধারণ স্ট্যাটিক হোস্টিংয়ে সার্ভার-মোড চলে না — ওখানে <b>OpenRouter</b> প্রোভাইডার বেছে নিজের key দিন।<br>
+     · Vercel-এ হলে: <b>Settings → Environment Variables → OPENROUTER_API_KEY</b> যোগ করে Redeploy করুন।`;
+  }
   if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) {
     return local
       ? `<br><br><b>কেন?</b> ব্রাউজার লোকাল সার্ভারে পৌঁছাতে পারছে না বা CORS ব্লক করছে।<br>
@@ -768,6 +823,38 @@ function hintForError(err, ctx) {
   if (/404/.test(msg)) return '<br><br>মডেলের নাম বা URL ভুল। সেটিংসে ↻ চেপে তালিকা আনুন।';
   if (/CORS/i.test(msg)) return '<br><br>সার্ভারে CORS বন্ধ। <code>OLLAMA_ORIGINS</code> সেট করুন।';
   return '';
+}
+
+/* ---------------- সার্ভার মোড শনাক্তকরণ ---------------- */
+async function detectServer() {
+  if (location.protocol === 'file:') return false;
+  try {
+    const r = await fetch((settings.bases.server || 'api') + '/models', { headers: { accept: 'application/json' } });
+    if (!r.ok) return false;
+    const j = await r.json();
+    return Array.isArray(j.data) && j.data.length > 0;
+  } catch { return false; }
+}
+
+async function quickServerCheck() {
+  checkMsg = { ok: false, text: 'পরীক্ষা চলছে…' };
+  render();
+  const t0 = performance.now();
+  try {
+    const r = await fetch((settings.bases.server || 'api') + '/models', { headers: { accept: 'application/json' } });
+    const ms = Math.round(performance.now() - t0);
+    if (!r.ok) {
+      let d = '';
+      try { d = (await r.json())?.error?.message || ''; } catch {}
+      throw new Error('HTTP ' + r.status + (d ? ' — ' + d : ''));
+    }
+    const j = await r.json();
+    const free = (j.data || []).filter(m => /:free$/.test(m.id)).length;
+    checkMsg = { ok: true, text: '✔ সার্ভার ঠিক আছে · ' + (j.data || []).length + 'টি মডেল (' + free + 'টি ফ্রি) · ' + ms + 'ms' };
+  } catch (e) {
+    checkMsg = { ok: false, text: '✕ সার্ভার পাওয়া যায়নি: ' + esc(String(e.message || e)) + '. সেটিংসে OpenRouter key দিন বা Ollama বেছে নিন.' };
+  }
+  render();
 }
 
 /* ---------------- sending ---------------- */
@@ -960,10 +1047,12 @@ function updateProviderUI() {
   const info = PROVIDER_INFO[settings.provider];
   $('provHint').innerHTML = info.hint;
   $('keyHint').innerHTML = info.keyHint;
+  const isServer = settings.provider === 'server';
+  const cloudish = settings.provider === 'openrouter' || isServer;
   $('lblKey').textContent = settings.provider === 'openrouter' ? 'OpenRouter API key' : 'API key (ঐচ্ছিক)';
-  $('fKey').classList.toggle('hidden', false);
-  $('fBase').classList.toggle('hidden', settings.provider === 'openrouter');
-  $('chkFreeOnly').parentElement.style.display = settings.provider === 'openrouter' ? 'flex' : 'none';
+  $('fKey').classList.toggle('hidden', isServer);
+  $('fBase').classList.toggle('hidden', settings.provider === 'openrouter' || isServer);
+  $('chkFreeOnly').parentElement.style.display = cloudish ? 'flex' : 'none';
   $('inKey').placeholder = settings.provider === 'openrouter' ? 'sk-or-v1-…' : 'ollama';
   $('inBase').value = settings.bases[settings.provider] || '';
   fillModelSelect();
@@ -999,7 +1088,7 @@ async function testConnection() {
 
   const headers = {};
   if (p === 'openrouter') { if (!key) { st.className = 'status err'; st.textContent = '✕ আগে API key দিন।'; return; } headers['Authorization'] = 'Bearer ' + key; }
-  else if (key) headers['Authorization'] = 'Bearer ' + key;
+  else if (key && p !== 'server') headers['Authorization'] = 'Bearer ' + key;
 
   const urls = p === 'ollama'
     ? [base.replace(/\/v1$/, '') + '/api/tags', base + '/models']
@@ -1115,6 +1204,7 @@ streamIn.addEventListener('click', async e => {
   if (quick) {
     const k = quick.dataset.quick;
     if (k === 'test') { openSettings(); testConnection(); return; }
+    if (k === 'connection') { quickServerCheck(); return; }
     settings.provider = k;
     settings.model = '';
     saveSettings(); openSettings();
@@ -1176,7 +1266,14 @@ addEventListener('resize', syncMobile);
   render();
   if (settings.models[settings.provider]?.length) fillModelSelect();
   autosize();
-  if (!settings.model && settings.provider === 'openrouter' && settings.keys.openrouter) {
+
+  if (settings.provider === 'server') {
+    detectServer().then(ok => {
+      serverDown = !ok;
+      if (ok) { fetchModels().catch(() => {}); render(); }
+      else render();
+    });
+  } else if (!settings.model && settings.provider === 'openrouter' && settings.keys.openrouter) {
     fetchModels().catch(() => {});
   }
   // সার্ভিস ওয়ার্কার না থাকলেও অ্যাপ offline-installable রাখতে চাইলে যোগ করা যাবে
