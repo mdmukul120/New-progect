@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HyperFrames demo — Write HTML, Render MP4</title>
+<!--
+  HyperFrames composition: HTML in, MP4 out.
+  Run:
+    npx hyperframes init my-video
+    cp index.html my-video/
+    cd my-video && npx hyperframes preview
+    npx hyperframes render
+  Requires Node.js 22+ and FFmpeg.
+-->
+<style>
+  :root { color-scheme: dark; }
+  body { margin:0; background:#0b0c10; color:#fff; font-family:system-ui,sans-serif; }
+  .scene { width:1280px; height:720px; margin:24px auto; background:linear-gradient(160deg,#14161f,#1e2130); border:1px solid #333; border-radius:16px; padding:48px; box-sizing:border-box; }
+  h1 { font-size:64px; margin:0 0 8px; }
+  .sub { color:#a0a5b4; font-size:24px; }
+  .chart { display:flex; gap:16px; align-items:flex-end; height:220px; margin-top:40px; }
+  .bar { width:120px; background:#8b5cf6; border-radius:8px 8px 0 0; }
+  .captions { margin-top:32px; font-size:28px; font-weight:700; }
+  .captions b { color:#ffd700; }
+  .meta { margin-top:16px; color:#8a8fa3; font-size:18px; }
+</style>
+</head>
+<body>
+<div class="scene" data-duration="10" data-fps="30">
+  <h1>Launch day</h1>
+  <div class="sub">Product intro — fade-in title, background video, subtle music</div>
+  <div class="chart" data-block="data-chart">
+    <div class="bar" style="height:60px"></div>
+    <div class="bar" style="height:110px"></div>
+    <div class="bar" style="height:160px"></div>
+    <div class="bar" style="height:200px"></div>
+  </div>
+  <div class="captions">This <b>hook</b> went viral in 24h</div>
+  <div class="meta">1280x720 · 30fps · captions + music · render with: npx hyperframes render</div>
+</div>
+</body>
+</html>

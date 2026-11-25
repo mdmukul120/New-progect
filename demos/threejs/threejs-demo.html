@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Three.js Skills Demo — r186</title>
+<style>
+  body { margin:0; background:#0b0c10; color:#fff; font-family:system-ui,sans-serif; }
+  header { padding:16px 20px; }
+  h1 { margin:0; font-size:22px; }
+  p { color:#a0a5b4; margin:6px 0 0; }
+  #app { width:100vw; height:calc(100vh - 90px); display:block; }
+  code { background:#1c1e26; padding:2px 6px; border-radius:6px; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.186.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.186.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<header>
+  <h1>Three.js Skills demo (r186)</h1>
+  <p>Scene + camera + renderer + animation loop. Open this file in a browser (needs internet for the three.js CDN).</p>
+</header>
+<canvas id="app"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const canvas = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight - 90);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0c10);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth / (innerHeight - 90), 0.1, 100);
+camera.position.set(3, 2.4, 4);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+// Lights (physical units in r186)
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(4, 6, 3);
+scene.add(key);
+
+// Cube (wireframe + solid)
+const cube = new THREE.Mesh(
+  new THREE.BoxGeometry(1.4, 1.4, 1.4),
+  new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.35, metalness: 0.1 })
+);
+scene.add(cube);
+const edges = new THREE.LineSegments(
+  new THREE.EdgesGeometry(cube.geometry),
+  new THREE.LineBasicMaterial({ color: 0xffffff })
+);
+cube.add(edges);
+
+// Torus ring
+const torus = new THREE.Mesh(
+  new THREE.TorusGeometry(1.9, 0.06, 16, 100),
+  new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
+);
+torus.rotation.x = Math.PI / 2.4;
+scene.add(torus);
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / (innerHeight - 90);
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight - 90);
+});
+
+renderer.setAnimationLoop((t) => {
+  const s = t * 0.001;
+  cube.rotation.y = s;
+  cube.rotation.x = Math.sin(s * 0.7) * 0.4;
+  torus.rotation.z = s * 0.6;
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+[
+  {
+    "label": "01 Ghost Editor",
+    "repo": "kurbaitaev/ghost-editor",
+    "desc": "Open-source AI video editor for Claude Code. Raw talking-head take in, finished reel out. 19 styles.",
+    "stars": 727,
+    "lang": "Python",
+    "url": "https://github.com/kurbaitaev/ghost-editor"
+  },
+  {
+    "label": "02 FFmpeg Skill",
+    "repo": "donghaozhang/ffmpeg-claude-skill",
+    "desc": "FFmpeg Media Processing Skill for Claude Code with demo files",
+    "stars": 3,
+    "lang": null,
+    "url": "https://github.com/donghaozhang/ffmpeg-claude-skill"
+  },
+  {
+    "label": "03 Claude Shorts",
+    "repo": "AgriciDaniel/claude-shorts",
+    "desc": "Interactive longform-to-shortform video creator — Claude Code skill with Remotion-rendered animated captions, AI segment scoring, cursor tracking, and audio-aware boundary snapping",
+    "stars": 506,
+    "lang": "Python",
+    "url": "https://github.com/AgriciDaniel/claude-shorts"
+  },
+  {
+    "label": "04 MotionClone",
+    "repo": "LPengYang/MotionClone",
+    "desc": "[ICLR 2025] Official implementation of MotionClone: Training-Free Motion Cloning for Controllable Video Generation ",
+    "stars": 565,
+    "lang": "Python",
+    "url": "https://github.com/LPengYang/MotionClone"
+  },
+  {
+    "label": "05 Motion Skills",
+    "repo": "iart-ai/motion-skills",
+    "desc": "56 open-source skills that teach your AI coding agent to make motion graphics, animation & video — kinetic typography, data-viz, explainers, TikTok/Reels, WebGL, Manim. 19 installable packs. By iart.ai, the AI motion agent.",
+    "stars": 2142,
+    "lang": "HTML",
+    "url": "https://github.com/iart-ai/motion-skills"
+  },
+  {
+    "label": "06 yt-dlp",
+    "repo": "yt-dlp/yt-dlp",
+    "desc": "A feature-rich command-line audio/video downloader",
+    "stars": 210483,
+    "lang": "Python",
+    "url": "https://github.com/yt-dlp/yt-dlp"
+  },
+  {
+    "label": "07 Whisper",
+    "repo": "openai/whisper",
+    "desc": "Robust Speech Recognition via Large-Scale Weak Supervision",
+    "stars": 113439,
+    "lang": "Python",
+    "url": "https://github.com/openai/whisper"
+  },
+  {
+    "label": "08 Awesome Claude Video Skills",
+    "repo": "zhuyansen/awesome-claude-video-skills",
+    "desc": "Open-source skills and toolkits that let Claude Code, Codex and other coding agents make video. 180 repos by type, each security-graded. English / 中文.",
+    "stars": 2683,
+    "lang": null,
+    "url": "https://github.com/zhuyansen/awesome-claude-video-skills"
+  },
+  {
+    "label": "09 Three.js Skills",
+    "repo": "cloudai-x/threejs-skills",
+    "desc": null,
+    "stars": 4383,
+    "lang": null,
+    "url": "https://github.com/CloudAI-X/threejs-skills"
+  },
+  {
+    "label": "10 HyperFrames",
+    "repo": "heygen-com/hyperframes",
+    "desc": "Open-source AI video editor: edit your own footage, or create and remake any video with Claude Code, Codex or the free Studio app. Write HTML, render MP4. By HeyGen.",
+    "stars": 89624,
+    "lang": "TypeScript",
+    "url": "https://github.com/heygen-com/hyperframes"
+  }
+]

@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>১০টি AI ভিডিও স্কিল — সব এক জায়গায়</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#0b0c10; color:#f1f3f8; font-family:system-ui,"Noto Sans Bengali","Hind Siliguri",sans-serif; }
+  header { max-width:1100px; margin:0 auto; padding:32px 20px 8px; }
+  h1 { margin:0; font-size:30px; }
+  .sub { color:#a0a5b4; margin:8px 0 0; }
+  main { max-width:1100px; margin:0 auto; padding:16px 20px 48px; }
+  .combined { background:#14161f; border:1px solid #2a2d3a; border-radius:16px; padding:16px; margin:16px 0 28px; }
+  .combined h2 { margin:0 0 10px; font-size:20px; }
+  video { width:100%; border-radius:10px; background:#000; display:block; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:20px; }
+  .card { background:#14161f; border:1px solid #2a2d3a; border-radius:16px; padding:14px; }
+  .card h3 { margin:10px 0 4px; font-size:18px; }
+  .card .gh { color:#8a8fa3; font-size:13px; word-break:break-all; }
+  .card .links { margin-top:8px; font-size:14px; }
+  .card a { color:#7dd3fc; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; font-weight:700; color:#0b0c10; }
+  footer { max-width:1100px; margin:0 auto; padding:0 20px 40px; color:#8a8fa3; font-size:14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>১০টি AI ভিডিও স্কিল — সব এক জায়গায়</h1>
+  <p class="sub">ছবির ১০টি GitHub স্কিলের ১০টি ভিডিও + ১টি কম্বাইন্ড ভিডিও (৪ মিনিট)। বাংলা সাবটাইটেলসহ।</p>
+</header>
+<main>
+  <section class="combined">
+    <h2>▶ কম্বাইন্ড ভিডিও — সব ১০টি স্কিল এক ভিডিওতে (৪:০০)</h2>
+    <video controls preload="metadata" src="all-skills-combined.mp4">
+      <track kind="subtitles" label="বাংলা" srclang="bn" src="all-skills-combined.bn.srt" default />
+    </video>
+    <p class="sub">সাবটাইটেল: <a href="all-skills-combined.bn.srt">all-skills-combined.bn.srt</a> (ব্রাউজারে সাবটাইটেল ট্র্যাক চালু করুন)</p>
+  </section>
+
+  <h2>আলাদা ভিডিও — ১০টি</h2>
+  <div class="grid" id="grid"></div>
+</main>
+<footer>
+  <p>ভিডিওগুলো <code>../videos/</code> ফোল্ডারে আছে। আসল ডেমো: <code>../demos/</code>। আবার বানাতে: <code>python3 ../video_factory/make_all.py</code></p>
+</footer>
+<script>
+const skills = [
+  ["01","Ghost Editor","#A78BFA","01_ghost-editor","https://github.com/kurbaitaev/ghost-editor","★ 727 · Python"],
+  ["02","FFmpeg Skill","#22C55E","02_ffmpeg-skill","https://github.com/donghaozhang/ffmpeg-claude-skill","★ 3 · Skill.md"],
+  ["03","Claude Shorts (9:16)","#F59E0B","03_claude-shorts","https://github.com/AgriciDaniel/claude-shorts","★ 506 · Python + Remotion"],
+  ["04","MotionClone","#EC4899","04_motionclone","https://github.com/LPengYang/MotionClone","★ 565 · ICLR 2025"],
+  ["05","Motion Skills","#06B6D4","05_motion-skills","https://github.com/iart-ai/motion-skills","★ 2,142 · 56 skills"],
+  ["06","yt-dlp","#EF4444","06_yt-dlp","https://github.com/yt-dlp/yt-dlp","★ 210,483 · Python"],
+  ["07","Whisper","#3B82F6","07_whisper","https://github.com/openai/whisper","★ 113,439 · OpenAI"],
+  ["08","Awesome Claude Video Skills","#F97316","08_awesome-claude-video-skills","https://github.com/zhuyansen/awesome-claude-video-skills","★ 2,683 · 548 repos"],
+  ["09","Three.js Skills","#10B981","09_threejs-skills","https://github.com/cloudai-x/threejs-skills","★ 4,383 · r186"],
+  ["10","HyperFrames","#8B5CF6","10_hyperframes","https://github.com/heygen-com/hyperframes","★ 89,624 · HeyGen"],
+];
+const grid = document.getElementById("grid");
+for (const [num, name, color, slug, url, meta] of skills) {
+  const card = document.createElement("article");
+  card.className = "card";
+  card.innerHTML = `
+    <span class="badge" style="background:${color}">${num}</span>
+    <h3>${name}</h3>
+    <div class="gh">${meta} · <a href="${url}" target="_blank" rel="noopener">${url.replace("https://","")}</a></div>
+    <video controls preload="metadata" src="../videos/${slug}.mp4">
+      <track kind="subtitles" label="বাংলা" srclang="bn" src="../videos/${slug}.bn.srt" />
+    </video>
+    <div class="links"><a href="../videos/${slug}.mp4">MP4 ডাউনলোড</a> · <a href="../videos/${slug}.bn.srt">বাংলা সাবটাইটেল</a></div>`;
+  grid.appendChild(card);
+}
+</script>
+</body>
+</html>
