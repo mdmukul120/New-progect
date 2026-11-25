@@ -32,6 +32,24 @@
 
 ---
 
+---
+
+## 🧩 Claude-এ সব স্কিল একসাথে (জিপ বান্ডেল)
+
+| কী | সাইজ | ডাউনলোড |
+|---|---|---|
+| **all-skills-for-claude.zip** — ৮১টি `SKILL.md` | 12.2 MB | [ডাউনলোড করুন](https://github.com/mdmukul120/New-progect/raw/arena/90113f82-new-progect/all-in-one/skills/all-skills-for-claude.zip) |
+| SHA-256 চেকসাম | — | [যাচাই করুন](https://github.com/mdmukul120/New-progect/raw/arena/90113f82-new-progect/all-in-one/skills/all-skills-for-claude.zip.sha256) |
+
+```bash
+curl -L -o all-skills-for-claude.zip \
+  https://github.com/mdmukul120/New-progect/raw/arena/90113f82-new-progect/all-in-one/skills/all-skills-for-claude.zip
+unzip all-skills-for-claude.zip -d all-skills && cd all-skills
+bash install-to-claude.sh
+```
+
+বিস্তারিত: [`all-in-one/skills/README.md`](all-in-one/skills/README.md)
+
 ## 👀 অনলাইনে দেখতে
 
 - **ভিডিও ফোল্ডার:** [github.com/mdmukul120/New-progect/tree/arena/90113f82-new-progect/videos](https://github.com/mdmukul120/New-progect/tree/arena/90113f82-new-progect/videos)

@@ -1,41 +1,99 @@
-# সব স্কিল এক ফোল্ডারে
+# সব স্কিল এক জায়গায় (Claude-এর জন্য)
 
-এই ফোল্ডারে ১০টি স্কিল একসাথে ইনস্টল করার নির্দেশ আছে।
-Claude Code / Cursor / Codex-এ স্কিলগুলো `~/.claude/skills/` বা
-প্রজেক্টের `.claude/skills/` ফোল্ডারে রাখলেই অটো-ডিসকভার হয়।
+## ⬇️ ডাউনলোড
 
-## এক লাইনে সব ইনস্টল (skills.sh CLI থাকলে)
+**[all-skills-for-claude.zip](all-skills-for-claude.zip)** — 12.2 MB · **৮১টি `SKILL.md`**
 
-```bash
-npx skills add kurbaitaev/ghost-editor
-npx skills add donghaozhang/ffmpeg-claude-skill
-npx skills add AgriciDaniel/claude-shorts
-npx skills add iart-ai/motion-skills
-npx skills add cloudai-x/threejs-skills
-npx skills add heygen-com/hyperframes
-# yt-dlp, Whisper, MotionClone আলাদা ইনস্টল (নিচে দেখুন)
+SHA-256: `1a537d0cb855d89a61796a59474f453cf953eb22ae22de47908a367edc5cfd8b`
+
+সরাসরি ডাউনলোড লিংক:
+
+```
+https://github.com/mdmukul120/New-progect/raw/arena/90113f82-new-progect/all-in-one/skills/all-skills-for-claude.zip
 ```
 
-## ম্যানুয়াল (git clone)
+---
+
+## 🚀 ৩ ধাপে Claude-এ ইনস্টল
 
 ```bash
-mkdir -p ~/.claude/skills
-cd ~/.claude/skills
-git clone https://github.com/kurbaitaev/ghost-editor
-git clone https://github.com/donghaozhang/ffmpeg-claude-skill
-git clone https://github.com/AgriciDaniel/claude-shorts
-git clone https://github.com/iart-ai/motion-skills
-git clone https://github.com/cloudai-x/threejs-skills
-git clone https://github.com/heygen-com/hyperframes
+# ১ — ডাউনলোড
+curl -L -o all-skills-for-claude.zip \
+  https://github.com/mdmukul120/New-progect/raw/arena/90113f82-new-progect/all-in-one/skills/all-skills-for-claude.zip
+
+# ২ — আনজিপ
+unzip all-skills-for-claude.zip -d all-skills && cd all-skills
+
+# ৩ — ইনস্টল
+bash install-to-claude.sh
 ```
 
-## টুল (স্কিল নয়, CLI)
+Claude Code বন্ধ করে আবার খুলুন — ব্যস। জিজ্ঞেস করুন: *"which skills do you have?"*
+
+### অন্য জায়গায় ইনস্টল
 
 ```bash
-pip install yt-dlp openai-whisper   # yt-dlp + Whisper
-# FFmpeg সিস্টেমে লাগবে: sudo apt install ffmpeg (Ubuntu/Debian)
-# MotionClone: GPU + Stable Diffusion মডেল লাগবে (README দেখুন)
-# Awesome list: শুধু রেফারেন্স — https://github.com/zhuyansen/awesome-claude-video-skills
+bash install-to-claude.sh --project        # এই প্রজেক্টের .claude/skills/ এ
+bash install-to-claude.sh /custom/path     # নিজের মতো পাথে
 ```
 
-অটো ইনস্টল স্ক্রিপ্ট: `./install-all-skills.sh`
+---
+
+## 📦 ভেতরে কী আছে
+
+| # | স্কিল | স্কিল সংখ্যা | ফোল্ডার |
+|---|---|---|---|
+| 01 | Ghost Editor | 1 | `skills/ghost-editor/` |
+| 02 | FFmpeg Skill | 1 | `skills/ffmpeg-skill/` |
+| 03 | Claude Shorts | 1 | `skills/claude-shorts/` |
+| 04 | MotionClone | — (টুল) | `tools/04_motionclone_README.md` |
+| 05 | Motion Skills | **56** | `skills/motion/<pack>/<skill>/` |
+| 06 | yt-dlp | — (CLI) | `tools/` |
+| 07 | Whisper | — (CLI) | `tools/` |
+| 08 | Awesome Claude Video Skills | — (রেফারেন্স) | `tools/08_...README.md` |
+| 09 | Three.js Skills | **13** | `skills/threejs/` |
+| 10 | HyperFrames | **9** | `skills/hyperframes/` |
+
+**মোট ৮১টি স্কিল** + ৪টি টুল/রেফারেন্স।
+
+পূর্ণ তালিকা: `MANIFEST.txt` (বান্ডেলের ভেতরে)।
+
+---
+
+## 🧪 যাচাই করা হয়েছে
+
+- জিপ ইন্টিগ্রিটি: `unzip -t` → **No errors detected**
+- ইনস্টলার টেস্ট: খালি ফোল্ডারে চালিয়ে **৮১/৮১ স্কিল** ইনস্টল হয়েছে
+- সবগুলো রিপো আসল GitHub থেকে ক্লোন করা, **কোনো বানানো কনটেন্ট নেই**
+
+---
+
+## ⚠️ স্কিল নয় যেগুলো
+
+- **yt-dlp**, **Whisper** — এগুলো Python CLI, `.claude/skills`-এ রাখার জিনিস নয়।
+  `pip install -U yt-dlp openai-whisper` করলেই হয়।
+- **MotionClone** — GPU + Stable Diffusion মডেল লাগে। `tools/04_motionclone_README.md` দেখুন।
+- **Awesome Claude Video Skills** — শুধু রেফারেন্স লিস্ট (৫৪৮টি রিপো)। ইনস্টল লাগে না।
+
+---
+
+## 🔁 zip ছাড়া সরাসরি ক্লোন করে ইনস্টল
+
+```bash
+bash install-all-skills.sh
+```
+
+এটি GitHub থেকে সরাসরি সব রিপো ক্লোন করে ইনস্টল করে (ইন্টারনেট লাগবে)।
+
+---
+
+## ⚖️ লাইসেন্স
+
+| রিপো | লাইসেন্স |
+|---|---|
+| ghost-editor, claude-shorts, threejs-skills, motion packs | MIT |
+| hyperframes | Apache-2.0 |
+| ffmpeg-claude-skill | লাইসেন্স ফাইল নেই (পাবলিক) |
+
+প্রতিটি ফোল্ডারে মূল রিপোর README `_README.repo.md` হিসেবে আছে।
+কোনো ফাইল পরিবর্তন করা হয়নি — শুধু সাজিয়ে একসাথে করা হয়েছে।
