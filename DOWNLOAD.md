@@ -48,7 +48,20 @@ unzip all-skills-for-claude.zip -d all-skills && cd all-skills
 bash install-to-claude.sh
 ```
 
-বিস্তারিত: [`all-in-one/skills/README.md`](all-in-one/skills/README.md)
+
+### ⚠️ Claude.ai-তে আপলোড করলে
+
+উপরের 12 MB বান্ডেল **Claude.ai নেবে না** (প্রতি জিপ ২ MB-এর কম হতে হয়, এক জিপে একটাই স্কিল)।
+Claude.ai-এর জন্য **৮১টি আলাদা ছোট জিপ** — সবচেয়ে বড় **1.3 MB**:
+
+**[`all-in-one/claude-skills/INDEX.md`](all-in-one/claude-skills/INDEX.md)** — পূর্ণ তালিকা ও ডাউনলোড লিংক
+
+```bash
+git clone --branch arena/90113f82-new-progect https://github.com/mdmukul120/New-progect.git
+bash New-progect/all-in-one/claude-skills/install-from-claude-zips.sh
+```
+
+বিস্তারিত (বড় বান্ডেল, Claude Code): [`all-in-one/skills/README.md`](all-in-one/skills/README.md)
 
 ## 👀 অনলাইনে দেখতে
 

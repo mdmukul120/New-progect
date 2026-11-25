@@ -1,5 +1,11 @@
 # সব স্কিল এক জায়গায় (Claude-এর জন্য)
 
+
+> ⚠️ **Claude.ai-তে আপলোড করবেন?** এই 12 MB বান্ডেল Claude.ai নেবে না (২ MB সীমা)।
+> Claude.ai-এর জন্য **[`../claude-skills/`](../claude-skills/)** ফোল্ডারে **৮১টি আলাদা
+> ছোট জিপ (সবচেয়ে বড় 1.3 MB)** রাখা আছে — সেগুলো একটার পর একটা আপলোড করুন।
+> এই বান্ডেলটি লোকাল ফোল্ডারে (Claude Code / Cursor) একসাথে কপি করার জন্য।
+
 ## ⬇️ ডাউনলোড
 
 **[all-skills-for-claude.zip](all-skills-for-claude.zip)** — 12.2 MB · **৮১টি `SKILL.md`**
